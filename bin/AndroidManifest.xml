@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="edu.dartmouthcs.mltoolkit"
+    android:versionCode="1"
+    android:versionName="1.1.100919" >
+    
+    <uses-sdk android:minSdkVersion="3" />
+
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+     <!-- used to communicate with Skyhook's servers -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- enables WiFi, if disabled, for the duration of a location request -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <!-- used to obtain information about the WiFi environment -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!-- used to obtain cell tower ID -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <application
+        
+        android:name="edu.cornell.socialdpudemo2.SocialDPUApplication2"
+        android:icon="@drawable/logo"
+        android:label="@string/app_name" >
+        
+        <activity
+            android:name="edu.cornell.socialdpudemo2.main_activity"
+            android:label="@string/app_name"
+            android:screenOrientation="portrait" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="edu.dartmouthcs.mltoolkit.MAIN" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- This service needs to be registered in this format. . For audio sensing-->
+        <service
+            android:name="edu.cornell.SocialDPU.ServiceControllers.AudioLib.AudioService"
+            android:enabled="true" />               
+        <!-- This service needs to be registered in this format. For writiting to SDcard -->
+        <service
+            android:name="edu.cornell.SocialDPU.Storage.SDCardStorageService"
+            android:enabled="true" />
+        
+    </application>
+
+</manifest>

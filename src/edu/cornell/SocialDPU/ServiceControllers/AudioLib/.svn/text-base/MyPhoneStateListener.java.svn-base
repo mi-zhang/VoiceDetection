@@ -1,0 +1,127 @@
+package edu.dartmouthcs.mltoolkit.ServiceControllers.AudioLib;
+
+import java.util.Timer;
+import java.util.TimerTask;
+
+import edu.dartmouthcs.mltoolkit.Ml_Toolkit_Application;
+import edu.dartmouthcs.mltoolkit.Storage.ML_toolkit_object;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.NetworkInfo.State;
+import android.telephony.TelephonyManager;
+import android.util.Log;
+
+public class MyPhoneStateListener{
+
+	//public int battery_level;
+	//public int charging_state;
+	//public String wifi_status;	
+	private Context Activity_Context;
+	private Ml_Toolkit_Application appState;
+
+
+	private static final String TAG = "Phone_state_listener: ";
+
+	public MyPhoneStateListener(Context Activity_Context, Ml_Toolkit_Application mlobj)
+	{
+		this.Activity_Context = Activity_Context;
+		this.appState = mlobj;
+
+
+		//start batttery receiver	
+		IntentFilter intentFilter = new IntentFilter("android.intent.action.PHONE_STATE");
+		this.appState.registerReceiver(phoneStateReceiver, intentFilter);
+
+
+		this.appState.registerReceiver( outgoingCallReceiver, new IntentFilter(Intent.ACTION_NEW_OUTGOING_CALL) );
+
+		//start connection receiver
+		//IntentFilter intentFilter = new IntentFilter("android.net.conn.CONNECTIVITY_CHANGE");
+		//appState.registerReceiver(connectivityReceiver, intentFilter);
+
+		//battery_level = 0;
+		//charging_state = 0;
+		//wifi_status = "none";
+		this.appState.phone_call_on = false;
+		Log.i("telephony-example", "initiated ");
+	}
+
+	private final BroadcastReceiver phoneStateReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive( Context context, Intent intent )			
+		{
+			String extra = intent.getStringExtra(android.telephony.TelephonyManager.EXTRA_STATE);
+
+			if(extra.equals(android.telephony.TelephonyManager.EXTRA_STATE_OFFHOOK))//means call running
+			{
+				Log.i("telephony-example", "call underway ... ");
+				//context.startService(new Intent(context, calltimerservice.class));
+				//if(appState.audioSensorOn == true)//if sensor is on then turn it off 
+				//appState.getServiceController().stopAudioSensor();
+
+			}
+
+			if(extra.equals(android.telephony.TelephonyManager.EXTRA_STATE_RINGING))//means call running
+			{
+
+				//context.startService(new Intent(context, calltimerservice.class));
+				//strategy if the phone is ringing then stop the audio service
+				Log.i("telephony-example", "call ringing ... ");
+				if(appState.audioSensorOn == true)//if sensor is on then turn it off 
+				{
+					Log.i("telephony-example", "call ringing ... stop Audio sensor");
+					appState.getServiceController().stopAudioSensor();
+				}
+
+			}
+
+
+			if(extra.equals(android.telephony.TelephonyManager.EXTRA_STATE_IDLE))
+			{
+				//strategy if the phone call end then start the audio service
+				Log.i("telephony-example", "call ended ... ");
+				if(appState.audioSensorOn == false && appState.audioForceLocked == false) 
+					// if sensor is on then off it, else nothing to do
+					//or for the initial state, where there is no phone call but these method will be called
+					appState.getServiceController().startAudioSensor();
+			}
+
+
+		}
+	};
+
+
+	private final BroadcastReceiver outgoingCallReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive( Context context, Intent intent )			
+		{
+			//String extra = intent.getStringExtra(android.telephony.TelephonyManager.EXTRA_STATE);
+
+			Log.i("telephony-example", "outgoing call about to be underway ... ");
+
+			try {
+				Log.i("telephony-example", "In try " + appState.audioSensorOn + " " + appState.audio_release);
+				if(appState.audioSensorOn == true)//if sensor is on then turn it off
+				{
+					Log.i("telephony-example", "Stopping Sesnor ");
+					appState.getServiceController().stopAudioSensor();
+					Thread.sleep(3000);
+					Log.i("telephony-example", "Sucessful wait " + appState.audio_release);
+				}
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				//e.printStackTrace();
+				Log.e("telephony-example", "No wait " + e.toString());
+			}
+
+		}
+	};
+
+
+
+}

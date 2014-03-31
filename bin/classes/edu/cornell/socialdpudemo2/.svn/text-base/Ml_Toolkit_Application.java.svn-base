@@ -1,0 +1,494 @@
+package edu.dartmouthcs.mltoolkit;
+
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.Properties;
+import java.util.TimeZone;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import android.app.Application;
+import android.app.NotificationManager;
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.os.Build;
+import android.os.Environment;
+import android.os.Handler;
+import android.provider.ContactsContract.CommonDataKinds.Phone;
+import android.provider.Settings.System;
+import android.telephony.TelephonyManager;
+import android.util.Log;
+import edu.dartmouthcs.UtilLibs.MyUnSyncBufferedWriter;
+import edu.dartmouthcs.UtilLibs.WriteToLogFiles;
+import edu.dartmouthcs.mltoolkit.CrashHandlers.ErrorReporter;
+import edu.dartmouthcs.mltoolkit.DaemonService.DaemonService;
+import edu.dartmouthcs.mltoolkit.ServiceControllers.ServiceController;
+import edu.dartmouthcs.mltoolkit.ServiceControllers.AccelerometerLib.AccelerometerService;
+import edu.dartmouthcs.mltoolkit.ServiceControllers.AudioLib.AudioService;
+import edu.dartmouthcs.mltoolkit.ServiceControllers.AudioLib.MyPhoneStateListener;
+import edu.dartmouthcs.mltoolkit.ServiceControllers.LocationLib.LocationService;
+import edu.dartmouthcs.mltoolkit.ServiceControllers.UploadingLib.InfoObject;
+import edu.dartmouthcs.mltoolkit.Storage.CircularBuffer;
+import edu.dartmouthcs.mltoolkit.Storage.ML_toolkit_object;
+import edu.dartmouthcs.mltoolkit.Storage.MiscUtilityFunctions;
+import edu.dartmouthcs.mltoolkit.Storage.MyDBAdapter;
+import edu.dartmouthcs.mltoolkit.Storage.MySDCardStateListener;
+import edu.dartmouthcs.sensorlab.MLToolkitInterface;
+//import edu.dartmouthcs.sensorlab.MLToolkitInterface;
+//import edu.dartmouthcs.sensorlab.MLToolkitInterface.acc_config;
+//import edu.dartmouthcs.sensorlab.MLToolkitInterface.audio_config;
+
+
+
+public class Ml_Toolkit_Application extends Application{
+	public static Context context;
+	private ServiceController serviceController;
+	public main_activity main_activity_Context;
+
+	public NotificationManager mNM;
+	public MLToolkitInterface mlt;
+
+
+	public final int  ACCEL_SAMPLERATE=32;
+	public final int ACCEL_SAMPLES_REQUIRED=128;
+	public final int AUDIO_SAMPLES_REQUIRED=512; 
+	public final int AUDIO_SAMPLERATE=8000;
+
+	//buffer to store data
+	public CircularBuffer<ML_toolkit_object> ML_toolkit_buffer;
+
+	//databse adapter
+	public MyDBAdapter db_adapter;
+	//database primary key
+	public int database_primary_key_id;
+
+	//write after how many entries
+	public final int writeAfterThisManyValues = 200;//0;
+	public final int maximumDbSize = 1000000;//10000000;//; //10mb           //1000kb
+
+
+	//write to a file
+	//public OutputStream outFile;
+	public ObjectOutputStream dataOutputFile;
+	public String currentFileName;
+	public InfoObject infoObj;
+	public List<String> fileList;
+
+	//upload
+	public boolean uploadRunning;
+
+
+	//flags to see whether sensors in turned on/off	
+	public boolean audioSensorOn;
+	public boolean accelSensorOn;
+	public boolean locationSensorOn;
+
+	//
+	public boolean phone_call_on;
+
+	//phone state object
+	public MyPhoneStateListener phoneCallInfo;
+
+	//sdcard state listener
+	public MySDCardStateListener mySDCardStateInfo; 
+
+	//application started once ... to ensure that services started only once
+	//needed for Pending notifications in the main screen 
+	public boolean applicatin_starated;
+
+
+	//all the labeling states
+	public boolean stationaryOngoing;
+	public boolean walkingOngoing;
+	public boolean runningOngoing;
+	public boolean drivingOngoing;
+	public boolean talkingOngoing;
+
+	//IMEI
+	public String IMEI;
+
+	//audio release true or false;
+	public boolean audio_release =false;
+
+	//raw audio flag
+	public boolean rawAudioOn;
+
+	//audio force locked
+	public boolean audioForceLocked;
+
+	//is phone rooted
+	public final boolean isPhoneRooted;
+
+
+	//saved sensors in turned on/off	
+	public boolean savedAudioSensorOn;
+	public boolean savedAccelSensorOn;
+	public boolean savedLocationSensorOn;
+	public boolean savedRawSensorOn;
+
+	//time zone offset
+	public long timeOffset; 
+
+	//current number of records
+	public long accel_no_of_records;
+	public long audio_no_of_records;
+	public String location_text;
+
+	//service pointers
+	public LocationService locationService;
+	public AudioService audioService;
+	public AccelerometerService acclerometerService;
+	public DaemonService daemonService;
+	public OutputStream currentOpenSDCardFile;
+
+	//SD card mounted
+	public boolean SDCardMounted;
+
+	public boolean fileListInitialzied = false;
+	private Handler mHandler = new Handler();
+	private final int rateAccelSampling = 1000*15;
+	
+	
+	//crash handler object
+	public ErrorReporter errorReporter;
+	
+	//counter for next restart/stop of services
+	public static int DayCounter = 0;
+
+	public Ml_Toolkit_Application()
+	{
+		context = this;
+		serviceController = new ServiceController(context);
+		//accelerometerTurnedAtSensorSelctionScreen = false;
+		//accelerometerSensor = false;
+		//audioSensor = false;
+
+		//initializeMLtoolkit();		
+		mlt = new MLToolkitInterface(); 
+
+		uploadRunning = false;
+
+
+		//phone call running
+		phone_call_on = false;
+
+		//set application started to false
+		applicatin_starated = false;
+
+
+		//create the circular buffer
+		ML_toolkit_buffer = new CircularBuffer<ML_toolkit_object>(context, 6000);//circular buffer size
+
+		//create new database and get the database adapter
+		//initializeDataBase();
+
+		//file write codes
+
+
+		//intiializFiles();
+
+
+		//inititializeInfoObject();
+
+		//files currently available
+		fileList = new ArrayList<String>();
+
+		//getFileList();
+
+
+
+		// set all the activity labels
+		stationaryOngoing = false;
+		walkingOngoing  = false;
+		runningOngoing  = false;
+		drivingOngoing  = false;
+		talkingOngoing  = false;
+
+		//IMEI
+		IMEI = "dummy";
+
+		//raw audio on flag
+		rawAudioOn = false;
+
+		// if necessary then service controller will start them and fix the values and 
+		// that will be determined by the current state
+		audioSensorOn = false;
+		accelSensorOn = false;
+		locationSensorOn = false;
+
+		//audio force locked
+		audioForceLocked = false;
+
+
+		//is phone rooted
+		this.isPhoneRooted = getRootInformation();
+
+		//remember the last state the phone was in
+		//initializeMLtoolkitConfiguration();
+
+		//get the time zone offset
+		timeZoneOffset();
+
+		//number of records
+		this.accel_no_of_records = 0;
+		this.audio_no_of_records = 0;
+		this.location_text = "";
+
+		//service intialization
+		this.locationService = null;
+		this.audioService = null;
+		this.acclerometerService = null;
+		this.daemonService = null;
+
+		//SD card file
+		currentOpenSDCardFile = null;
+
+		//SD card mounted
+		this.SDCardMounted = false;
+
+		mHandler.removeCallbacks(mUpdateTimeTask);
+		mHandler.postDelayed(mUpdateTimeTask, rateAccelSampling);
+		
+		
+		//register crash handler
+		errorReporter = new ErrorReporter();
+		errorReporter.Init(this);
+		
+		//print log messages
+		WriteToLogFiles wrtlfile = new WriteToLogFiles();
+		wrtlfile.startLogThread();
+		
+	}
+
+	private Runnable mUpdateTimeTask = new Runnable() {
+		public void run() {
+
+			if(fileListInitialzied == false){
+				fileListInitialzied = true;
+				intiializFiles();
+				getFileList();
+				Log.i("SD card-examplee", "File list initiated Initiator ");
+			}
+			//mHandler.postDelayed(mUpdateTimeTask, 1000*60*10);
+			//mHandler.postDelayed(mUpdateTimeTask, 1000*30);
+		}
+	};
+
+	private boolean getRootInformation() {
+		// TODO Auto-generated method stub
+		if((Build.ID).equals("MASTER"))
+			return true;
+
+		return false;
+	}
+
+	public void getFileList() {
+		// TODO Auto-generated method stub
+		File folder = new File("/sdcard/mltoolkit/");
+		File[] listOfFiles = folder.listFiles();
+
+		if(listOfFiles!=null){//if sd card is not avaiable
+			for (int i = 0; i < listOfFiles.length; i++) {
+				if (listOfFiles[i].isFile()) {
+					//System.out.println("File " + listOfFiles[i].getName());
+					try {
+						fileList.add(listOfFiles[i].getCanonicalPath());
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						//e.printStackTrace();
+					}
+				} 
+			}
+		}
+	}
+
+	private void inititializeInfoObject() {
+		// TODO Auto-generated method stub
+		//infoObj = new InfoObject(this);
+
+	}
+
+	public void intiializFiles() {
+		// TODO Auto-generated method stub
+		File f = new File("/sdcard/mltoolkit");
+		if(f.exists() == false)
+			f.mkdir();
+
+		/*try{
+			this.currentFileName = "/sdcard/mltoolkit/MLTOOLKIT_FILE_"  + MiscUtilityFunctions.now() + ".txt";
+			OutputStream outFile = new FileOutputStream(this.currentFileName);
+			dataOutputFile = new ObjectOutputStream(new MyUnSyncBufferedWriter(outFile));
+			dataOutputFile.close();
+		}
+		catch(Exception ex){}*/
+
+	}
+
+	public void initializeDataBase() {
+		//delete broken data base files
+		deleteBrokenDbrFileInInternalMemory();
+
+		// TODO Auto-generated method stub
+		this.database_primary_key_id = 0;
+		//db_adapter = new MyDBAdapter(this,"myDatabase_" + MiscUtilityFunctions.now() + ".db");	
+		//db_adapter = new MyDBAdapter(this,"ML_" +"_"+ getUniqueId() +"_" + java.lang.System.currentTimeMillis() + ".db");	
+		long my_time = java.lang.System.currentTimeMillis();
+		my_time  = (long)(my_time /= 1000);
+		db_adapter = new MyDBAdapter(this,  my_time + "_" + IMEI + ".dbr");	
+		//Log.w("DBNAME", "DB NAME" + db_adapter.getPathOfDatabase());
+
+	}
+
+
+
+	private void deleteBrokenDbrFileInInternalMemory() {
+		// TODO Auto-generated method stub
+		String d = "/data/data/edu.dartmouthcs.mltoolkit/databases/";
+		String e = ".dbr";
+		ExtensionFilter filter = new ExtensionFilter(e);
+		File dir = new File(d);
+
+		String[] list = dir.list(filter);
+		File file;
+		if (list == null || list.length == 0) 
+			return;
+
+		for (int i = 0; i < list.length; i++) {
+			file = new File(d + list[i]);
+			file.delete();
+			//System.out.print(file);
+			//System.out.println( "  deleted " + isdeleted);
+		}
+
+		Log.w("DELETEDD", "FILE Deleted " + list.length);
+
+	}
+
+	class ExtensionFilter implements FilenameFilter {
+
+		private String extension;
+
+		public ExtensionFilter( String extension ) {
+			this.extension = extension;             
+		}
+		public boolean accept(File dir, String name) {
+			return (name.endsWith(extension));
+		}
+	}
+
+	public ServiceController getServiceController()
+	{
+		return this.serviceController;
+		//serviceController = new ServiceController(context);
+	}
+
+	public void set_main_activity_Context(Context context)
+	{
+		main_activity_Context = (main_activity)context;
+	}
+
+	public main_activity get_main_activity_Context()
+	{
+		return main_activity_Context;// = (main_activity)context;
+	}
+
+
+	//ml toolkit
+	public void initializeMLtoolkitConfiguration()
+	{
+		/*File f = new File("/sdcard/mltoolkit_states.config");
+		//File f = new File("mltoolkit_states.config");
+
+		if(f.exists() == false){
+			//f.mkdir();
+			//write application state
+			//means if SD card wasn't there then this is the default sensor initialization
+			this.savedAudioSensorOn = true;
+			this.savedAccelSensorOn = true;
+			this.savedLocationSensorOn = true;
+			this.savedRawSensorOn = false;
+			writeToPropertiesFile(this.savedAudioSensorOn, this.savedAccelSensorOn, this.savedLocationSensorOn, this.savedRawSensorOn);
+		}*/
+		//else //means config already exists
+		//{
+		Properties prop = new Properties();
+		//String fileName = "/sdcard/mltoolkit_states.config";
+		String fileName = "mltoolkit_states.config";
+
+		//String fileName = "mltoolkit_states.config";
+		InputStream is;
+		try {
+			//is = new FileInputStream(fileName );
+			is = openFileInput(fileName);
+			prop.load(is);
+			this.savedAudioSensorOn = Boolean.parseBoolean(prop.getProperty("Audio"));
+			this.audioForceLocked = !this.savedAudioSensorOn;//because this like the setting in the sensor screen
+
+			this.savedAccelSensorOn = Boolean.parseBoolean(prop.getProperty("Accel"));
+			this.savedLocationSensorOn = Boolean.parseBoolean(prop.getProperty("Location"));
+			rawAudioOn = this.savedRawSensorOn = Boolean.parseBoolean(prop.getProperty("Raw_Audio"));	
+
+
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			//e.printStackTrace();
+
+			//means file doesn't exist
+			//start writing the files
+			this.savedAudioSensorOn = true;
+			this.savedAccelSensorOn = true;
+			this.savedLocationSensorOn = true;
+			this.savedRawSensorOn = false;
+			writeToPropertiesFile(this.savedAudioSensorOn, this.savedAccelSensorOn, this.savedLocationSensorOn, this.savedRawSensorOn);
+		}
+		//}
+	}
+
+	public void writeToPropertiesFile(boolean savedAudioSensorOn2,
+			boolean savedAccelSensorOn2, boolean savedLocationSensorOn2,
+			boolean savedRawSensorOn2) {
+		// TODO Auto-generated method stub
+
+		Properties prop = new Properties();
+		String fileName = "mltoolkit_states.config";
+		//String fileName = "mltoolkit_states.config";
+		OutputStream outs;
+		try {
+			outs = openFileOutput(fileName,MODE_PRIVATE);
+			//prop.load(is);
+			prop.setProperty("Audio", ""+ savedAudioSensorOn2);
+			prop.setProperty("Accel", ""+ savedAccelSensorOn2);
+			prop.setProperty("Location", ""+ savedLocationSensorOn2);
+			prop.setProperty("Raw_Audio", ""+ savedRawSensorOn2);
+			prop.store(outs, "ML Toolkit COnfig file");
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();			
+			Log.w("FAILED", "FILE WRITE FAILED " + e.toString());
+		}
+	}
+
+	public void timeZoneOffset()
+	{
+		TimeZone ids = TimeZone.getDefault();
+		Calendar calendar = new GregorianCalendar(ids);
+		timeOffset = calendar.get(Calendar.ZONE_OFFSET) + calendar.get(Calendar.DST_OFFSET);
+	}
+
+
+
+
+
+}

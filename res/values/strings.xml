@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="foreground_service_started_aud">Service is in the foreground aud</string>
+    <string name="foreground_service_started_location">Service is in the foreground location</string>
+    <string name="CUSTOM_VIEW">Custom View</string>
+    <string name="CrashReport_MailSubject">ML Toolkit Crash Report</string>
+    <string name="CrashReport_MailBody">Crash report is as follows</string>
+
+    <integer-array name="accel_foreground"></integer-array>
+
+    <string name="foreground_service_started">Service is in the foreground</string>
+    <string name="local_service_label">Sample Local Service</string>
+    <string name="app_name">Voice Detection</string>
+   
+	<string name="q1">Did  you just finish a conversation?\n</string>
+    <string name="q1_a1">Yes</string>
+    <string name="q1_a2">No</string>
+    <string name="q2">How many people were you talking to?\n</string>
+    <string name="q2_a1">1</string>
+    <string name="q2_a2">2</string>
+    <string name="q2_a3">3</string>
+    <string name="q2_a4">4</string>
+    <string name="q2_a5">5 or more</string>
+    <string name="q3">Please classify the person you were just talking to (if there were multiple people, thinking about the person that you talked to the most in the conversation):\n</string>
+    <string name="q3_a1">Strong tie</string>
+    <string name="q3_a2">Weak tie</string>
+    <string name="q3_a3">Neither</string>
+    <string name="q4">On a scale of 1 to 7, how did you feel during the conversation?\n</string>
+    <string name="q4_a1">1 - Very unhappy</string>
+    <string name="q4_a2">2</string>
+    <string name="q4_a3">3</string>
+    <string name="q4_a4">4 - Neither happy nor unhappy</string>
+    <string name="q4_a5">5</string>
+    <string name="q4_a6">6</string>
+    <string name="q4_a7">7 - Very happy</string>
+    <string name="q5">What kind of environment were you in during the conversation?\n</string>
+    <string name="q5_a1">Noisy</string>
+    <string name="q5_a2">Medium</string>
+    <string name="q5_a3">Quiet</string>
+    
+    <string name="button_startnstopsensing">Start Sensing</string>
+    <string name="button_upload">Upload</string>
+    
+
+</resources>

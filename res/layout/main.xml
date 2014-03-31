@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:layout_gravity="center"
+    android:layout_marginTop="1dip"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/text_audio"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/violet"
+        android:gravity="center"
+        android:text="Human Voice"
+        android:textColor="@color/white"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+    <ImageView
+        android:id="@+id/status_icon_audio"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@id/text_audio"
+        android:paddingBottom="15px"
+        android:paddingLeft="10px"
+        android:paddingRight="5px"
+        android:paddingTop="5px"
+        android:src="@drawable/cross" />
+
+    <TextView
+        android:id="@+id/button_status_audio"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/text_audio"
+        android:layout_toRightOf="@+id/status_icon_audio"
+        android:gravity="center"
+        android:paddingTop="30px"
+        android:text="Not Available"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+    
+    <LinearLayout
+        
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingLeft="35dp"
+        android:paddingTop="275dp" >
+
+        <Button
+            android:id="@+id/button_startnstopsensing"
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
+            android:text="@string/button_startnstopsensing" />
+	        <!-- android:onClick="onClickStartnStopSensing" /> --> 
+
+	    <Button
+	        android:id="@+id/button_upload"
+	        android:layout_width="250dp"
+	        android:layout_height="wrap_content"
+	        android:text="@string/button_upload" /> 
+	    
+	    <TextView
+	        android:id="@+id/textview_imei"
+	        android:layout_width="250dp"
+	        android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
+    <!--
+    <TextView
+        android:id="@+id/text_conversation"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/violet"
+        android:gravity="center"
+        android:layout_below="@id/status_icon_audio"
+        android:text="Conversation"
+        android:textColor="@color/white"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+    <ImageView
+        android:id="@+id/status_icon_conversation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@id/text_conversation"
+        android:paddingBottom="15px"
+        android:paddingLeft="10px"
+        android:paddingRight="5px"
+        android:paddingTop="5px"
+        android:src="@drawable/converation" />
+
+    <TextView
+        android:id="@+id/button_status_conversation"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/text_conversation"
+        android:layout_toRightOf="@+id/status_icon_conversation"
+        android:gravity="center"
+        android:paddingTop="30px"
+        android:text="Not Available"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+        -->
+
+</RelativeLayout>

@@ -1,0 +1,47 @@
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/groups/pac/!svn/ver/317/mashfiqui/MLtoolkit/WithInference/src/edu/dartmouthcs/mltoolkit/Storage
+END
+ML_toolkit_object.java
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/groups/pac/!svn/ver/317/mashfiqui/MLtoolkit/WithInference/src/edu/dartmouthcs/mltoolkit/Storage/ML_toolkit_object.java
+END
+SDCardStorageService.java
+K 25
+svn:wc:ra_dav:version-url
+V 122
+/groups/pac/!svn/ver/317/mashfiqui/MLtoolkit/WithInference/src/edu/dartmouthcs/mltoolkit/Storage/SDCardStorageService.java
+END
+MiscUtilityFunctions.java
+K 25
+svn:wc:ra_dav:version-url
+V 122
+/groups/pac/!svn/ver/317/mashfiqui/MLtoolkit/WithInference/src/edu/dartmouthcs/mltoolkit/Storage/MiscUtilityFunctions.java
+END
+MyDBAdapter.java
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/groups/pac/!svn/ver/317/mashfiqui/MLtoolkit/WithInference/src/edu/dartmouthcs/mltoolkit/Storage/MyDBAdapter.java
+END
+MyObject.java
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/groups/pac/!svn/ver/317/mashfiqui/MLtoolkit/WithInference/src/edu/dartmouthcs/mltoolkit/Storage/MyObject.java
+END
+MySDCardStateListener.java
+K 25
+svn:wc:ra_dav:version-url
+V 123
+/groups/pac/!svn/ver/317/mashfiqui/MLtoolkit/WithInference/src/edu/dartmouthcs/mltoolkit/Storage/MySDCardStateListener.java
+END
+CircularBuffer.java
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/groups/pac/!svn/ver/317/mashfiqui/MLtoolkit/WithInference/src/edu/dartmouthcs/mltoolkit/Storage/CircularBuffer.java
+END

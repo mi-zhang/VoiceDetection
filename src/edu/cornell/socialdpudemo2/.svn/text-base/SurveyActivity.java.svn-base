@@ -1,0 +1,18 @@
+package edu.dartmouthcs.mltoolkit;
+
+import edu.dartmouthcs.mltoolkit.ServiceControllers.ServiceController;
+import android.app.Activity;
+import android.os.Bundle;
+
+
+public class SurveyActivity extends Activity {
+	
+	ServiceController serviceController;
+	private static Ml_Toolkit_Application appState;
+	
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.survey);
+	}
+}

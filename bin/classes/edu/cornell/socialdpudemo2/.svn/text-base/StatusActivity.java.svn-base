@@ -1,0 +1,170 @@
+package edu.dartmouthcs.mltoolkit;
+
+import java.util.Timer;
+import java.util.TimerTask;
+
+import edu.dartmouthcs.mltoolkit.ServiceControllers.ServiceController;
+import android.app.Activity;
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.widget.TextView;
+import android.widget.Toast;
+
+
+public class StatusActivity extends Activity {
+
+	ServiceController serviceController;
+	//private static Ml_Toolkit_Application appState;
+	private Ml_Toolkit_Application appState;
+	private TextView battery_level_Tv;
+	private TextView plugged_in_status__Tv;
+	private TextView wifi_level_Tv;
+	Timer statusUpdateTimer;
+
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.status);
+		appState = (Ml_Toolkit_Application)getApplicationContext();
+
+		wifi_level_Tv = (TextView) findViewById(R.id.wifi_status);
+		wifi_level_Tv.setText(appState.infoObj.wifi_status);
+
+		battery_level_Tv = (TextView) findViewById(R.id.battery_level);
+		battery_level_Tv.setText(""+appState.infoObj.battery_level+"%");
+
+
+		plugged_in_status__Tv = (TextView) findViewById(R.id.plugged_in);
+		if(appState.infoObj.charging_state == 0)
+			plugged_in_status__Tv.setText("Not plugged");
+		else
+			plugged_in_status__Tv.setText("Plugged");
+
+	}
+	
+	@Override
+	public void onResume()
+	{
+		super.onResume();
+		statusUpdateTimer = new Timer();
+		
+		//add null
+		//statusUpdateTimer = null;
+		
+		statusUpdateTimer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				//locationTimerMethod();
+				//battery_level_Tv = (TextView) findViewById(R.id.battery_level);
+				updateMyView();
+			}
+
+
+
+		}, 0,1000);
+
+
+	}
+	
+	private void updateMyView() {
+		// TODO Auto-generated method stub
+		this.runOnUiThread(UITimer_Tick);
+	}
+	
+	private Runnable UITimer_Tick = new Runnable() {
+		public void run() {
+
+			battery_level_Tv.setText(""+appState.infoObj.battery_level+"%");
+
+			//battery_level_Tv.setText
+			//plugged_in_status__Tv = (TextView) findViewById(R.id.plugged_in);
+			if(appState.infoObj.charging_state == 0)
+				plugged_in_status__Tv.setText("Not plugged");
+			else
+				plugged_in_status__Tv.setText("Plugged");
+			
+			wifi_level_Tv.setText(appState.infoObj.wifi_status);
+			
+		}
+	};
+	
+	@Override
+	public void onPause() {
+		super.onPause();
+		statusUpdateTimer.cancel();
+		//Log.i(TAG, "onPause ...");
+	}
+	
+	
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// TODO Auto-generated method stub
+		super.onCreateOptionsMenu(menu);
+		menu.add(0, Menu.FIRST + 1, 2, "Upload");
+		//menu.add(0, Menu.FIRST + 2, 2, "Survey");
+		//menu.add(0, Menu.FIRST + 3, 3, "About");
+		//menu.add(0, Menu.FIRST + 2, 3, "Status");
+		menu.add(0, Menu.FIRST + 2, 1, "Back");
+		return true;
+	}
+	
+	
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		// TODO Auto-generated method stub
+		super.onOptionsItemSelected(item);
+		switch (item.getItemId()) {
+		case Menu.FIRST + 1: {
+			Toast.makeText(this, "Data remaining to upload:\n" + appState.fileList.size() + " MB",
+					Toast.LENGTH_SHORT).show();
+			break;
+		}
+		/*case Menu.FIRST + 2: {
+			// Open a survey activity
+			Intent intent = new Intent();
+			//intent.putExtra("sensor_status", sensor_status);
+			intent.setAction("edu.dartmouthcs.mltoolkit.SURVEY");
+			startActivity(intent);
+			//startActivityForResult(intent,SENSOR_STATUS_REQUEST);
+			break;
+		}
+		case Menu.FIRST + 3: {
+			//Toast.makeText(this, " Sensor Group  &  PAC Group\n Depart. of Computer Science\n Dartmouth College",
+			//	Toast.LENGTH_LONG).show();
+			Intent intent = new Intent();
+			//intent.putExtra("sensor_status", sensor_status);
+			intent.setAction("edu.dartmouthcs.mltoolkit.ABOUT");
+			startActivity(intent);
+			break;
+		}*/
+		/*case Menu.FIRST + 2: {
+			//System.exit(0);
+			Intent intent = new Intent();
+			//intent.putExtra("sensor_status", sensor_status);
+			intent.setAction("edu.dartmouthcs.mltoolkit.STATUS");
+			startActivity(intent);
+			//startActivityForResult(intent,SENSOR_STATUS_REQUEST);
+			break;
+			//break;
+		}*/
+		case Menu.FIRST + 2: {
+			//System.exit(0);
+			//Intent intent = new Intent();
+			//intent.putExtra("sensor_status", sensor_status);
+			//intent.setAction("edu.dartmouthcs.mltoolkit.STATUS");
+			//startActivity(intent);
+			//startActivityForResult(intent,SENSOR_STATUS_REQUEST);
+			finish();
+			break;
+			//break;
+		}
+		}
+
+		return true;
+	}
+	
+}

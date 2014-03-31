@@ -1,0 +1,559 @@
+package edu.dartmouthcs.mltoolkit.Storage;
+
+
+
+//*******************************************************************
+import java.io.File;
+
+import android.content.ContentValues;
+import android.content.Context;
+//import android.database.Cursor;
+import android.database.SQLException;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+import android.database.sqlite.SQLiteDatabase.CursorFactory;
+import android.util.Log;
+
+//import edu.dartmouthcs.mltoolkit.Storage;
+
+public class MyDBAdapter {
+	private String DATABASE_NAME;
+	//private static final String DATABASE_TABLE = "sources";
+	private static final int DATABASE_VERSION = 1;
+	private static final long MAX_INSERT_PER_TRANSACTION = 500;
+	private long insert_count;
+	public boolean database_online;
+
+	// The index (key) column name for use in where clauses.
+	//public static final String KEY_ID = "_id";
+
+	// The name and column index of each column in your database.
+	//public static final String KEY_NAME = "name";
+	//public static final int NAME_COLUMN = 1;
+	// TODO: Create public field for each column in your table.
+
+	// SQL Statement to create a new database.
+	//private static final String DATABASE_CREATE = "create table "
+	//		+ DATABASE_TABLE + " (" + KEY_ID
+	//		+ " integer primary key autoincrement, " + KEY_NAME
+	//		+ " text not null);";
+
+	private static final String CREATE_TABLE_EVENT_IDS = "CREATE TABLE IF NOT EXISTS " +
+	"event_ids(event_id INTEGER PRIMARY KEY AUTOINCREMENT);";
+	private static final String CREATE_TABLE_SOURCES = "CREATE TABLE IF NOT EXISTS " +
+	"sources(source_id INTEGER PRIMARY KEY ASC AUTOINCREMENT, " +
+	"source_name TEXT UNIQUE ON CONFLICT IGNORE, source_sampling_rate INTEGER);";
+	private static final String  CREATE_TABLE_EVENTS = "CREATE TABLE IF NOT EXISTS " +
+	"events(event_id INTEGER ASC, event_time DATETIME,event_source_id INTEGER REFERENCES sources(source_id), " +
+	"event_source_message_type_id INTEGER, event_data BLOB);";
+	private static final String CREATE_TABLE_INFERENCE = "CREATE TABLE IF NOT EXISTS " +
+	"inference(inference_time DATETIME ASC, inference_is_start BOOLEAN, inference_type INTEGER, inference_name TEXT);";
+	private static final String CREATE_TABLE_LABEL = "CREATE TABLE IF NOT EXISTS " +
+	"label(label_time DATETIME ASC, label_is_start BOOLEAN, label_type INTEGER, label_name TEXT);";
+	private static final String CREATE_TABLE_LOCATION = "CREATE TABLE IF NOT EXISTS " +
+	"location(location_time DATETIME ASC, location_is_start BOOLEAN, location_lat FLOAT, location_lon FLOAT);";
+	private static final String CREATE_TABLE_EXPERIMENTS = "CREATE TABLE IF NOT EXISTS " +
+	"experiments(experiment_id INTEGER PRIMARY KEY ASC AUTOINCREMENT, experiment_name TEXT, " +
+	"experiment_start DATETIME, experiment_end DATETIME);";
+
+	private static final String TABLE_NAME_EVENT_IDS = "event_ids";
+	private static final String TABLE_NAME_SOURCES = "sources";
+	private static final String TABLE_NAME_EVENTS = "events";
+	private static final String TABLE_NAME_INFERENCES = "inference";
+	private static final String TABLE_NAME_LABEL = "label";
+	private static final String TABLE_NAME_LOCATION = "location";
+	private static final String TABLE_NAME_EXPERIMENTS = "experiments";
+
+	// Variable to hold the database instance
+	private SQLiteDatabase db;
+	// Context of the application using the database.
+	private final Context context;
+	// Database open/upgrade helper
+	private myDbHelper dbHelper;
+
+	public MyDBAdapter(Context _context) {
+		context = _context;
+		dbHelper = new myDbHelper(context, DATABASE_NAME, null,
+				DATABASE_VERSION);
+		insert_count = 0;
+
+	}
+
+	public MyDBAdapter(Context _context, String database_name) {
+		context = _context;
+
+		this.DATABASE_NAME = database_name;
+		dbHelper = new myDbHelper(context, DATABASE_NAME, null,
+				DATABASE_VERSION);
+	}
+
+	public MyDBAdapter open() throws SQLException {
+		db = dbHelper.getWritableDatabase();
+		database_online = true;
+		return this;
+	}
+
+	public void close() {
+		database_online = false;
+		if(db.inTransaction()){
+			db.setTransactionSuccessful();
+			db.endTransaction();		
+		}
+		insert_count=0;
+		db.close();
+
+	}
+
+	public long getNewEventID(){
+		ContentValues value = new ContentValues();
+		value.putNull("event_id");
+
+		return insertEntry(TABLE_NAME_EVENT_IDS, value);
+	}
+
+
+	// Register sources, make query first
+	public void registerSource(String source_name, int source_sampling_rate){
+
+		//Cursor cur = db.query(TABLE_NAME_SOURCES, new String[] { "source_id" }, "source_name=? AND source_sampling_rate=?", 
+		//		 new String[] {source_name, Integer.toString(source_sampling_rate)}, null, null, null);
+
+		//if (cur.getCount() == 0){
+		ContentValues value = new ContentValues();
+		value.putNull("source_id");
+		value.put("source_name", source_name);
+		value.put("source_sampling_rate", source_sampling_rate);
+		insertEntry(TABLE_NAME_SOURCES, value);
+		//}
+
+
+	}
+
+	public void insertEntryEvents(long event_time, int event_source_id, int event_source_message_type_id, byte[] event_data){
+		ContentValues value = new ContentValues();
+		value.put("event_id", getNewEventID());
+		value.put("event_time", ((double)event_time)/1000);
+		value.put("event_source_id", event_source_id);
+		value.put("event_source_message_type_id", event_source_message_type_id);
+		value.put("event_data", event_data);
+
+		insertEntry(TABLE_NAME_EVENTS, value);
+
+	}
+	public void insertEntryExperiments(String experiment_name, long experiment_start, long experiment_end){
+		ContentValues value = new ContentValues();
+		value.put("experiment_name", experiment_name);
+		value.put("experiment_start", experiment_start);
+		value.put("experiment_end", experiment_end);
+		insertEntry(TABLE_NAME_EXPERIMENTS, value);
+	}
+	public void insertEntryInference(long inference_time, boolean inference_is_start, int inference_type, String inference_name){
+		ContentValues value = new ContentValues();
+		value.put("inference_time", ((double)inference_time/1000));
+		value.put("inference_is_start", inference_is_start);
+		value.put("inference_type", inference_type);
+		value.put("inference_name", inference_name);
+		insertEntry(TABLE_NAME_INFERENCES, value);
+		Log.i("Inference Tag", "" + inference_name + "  " + inference_is_start);
+	}
+	public void insertEntryLabel(long lable_time, boolean label_is_start, int label_type, String label_name){
+
+		ContentValues value = new ContentValues();
+		value.put("label_time", ((double)lable_time/1000));
+		value.put("label_type", label_type);
+		value.put("label_is_start", label_is_start);
+		value.put("label_name", label_name);
+		insertEntry(TABLE_NAME_LABEL, value);
+		Log.i("Label Tag", "" + label_name + "  " + label_is_start);
+	}
+
+	public void insertEntryLocation(long location_time, boolean location_is_start, double location_lat, double location_lon){		
+
+		ContentValues value = new ContentValues();
+		value.put("location_time", location_time);
+		value.put("location_is_start", location_is_start);
+		value.put("location_lat", location_lat);
+		value.put("location_lon", location_lon);
+		insertEntry(TABLE_NAME_LOCATION, value);
+
+	}
+
+
+
+	private long insertEntry(String table_name, ContentValues value) {
+		// TODO: Create a new ContentValues to represent my row
+		// and insert it into the database.
+
+		//ContentValues values = _myObject.getValue();
+		long index = 0;
+
+		/*
+		Log.d("XY", "Insersion count "+insert_count);
+		index = db.insert(table_name, null, value);
+
+		insert_count++;
+		 */
+
+		try{
+			if (insert_count == 0) db.beginTransaction();
+
+			index = (int)db.insert(table_name, null, value);
+			insert_count++;
+
+			Log.d("XY", "Insersion count "+insert_count);
+			if(insert_count == MAX_INSERT_PER_TRANSACTION  ) {
+				Log.d("XY", "trasaction sucessful");
+
+				db.setTransactionSuccessful();
+			}
+		}catch (SQLException e) {
+		} finally {
+			if(insert_count == MAX_INSERT_PER_TRANSACTION  ){ 
+				insert_count=0;
+				db.endTransaction();
+			}
+		}
+
+		return index;
+	}
+
+
+
+
+	public void insertMltObj(Object obj){
+		ML_toolkit_object mltobj = (ML_toolkit_object)obj;
+
+		//0 = audio, 1=accelerometer, 2=location, 3 = audio features, 4 = accel features, 5 = audio inference, 6 = accel inference, 7 = label_start , 8 = label_end 
+
+		if(mltobj.datatype < 5)//means no inference result or label information
+			insertEntryEvents(mltobj.timestamp, mltobj.datatype, 0, mltobj.data);
+		else if(mltobj.datatype ==  5) //go to inferred results
+			insertEntryInference(mltobj.timestamp, mltobj.isStart, 0, mltobj.inferred_results_or_label_info); // 0 means audio inference
+		else if(mltobj.datatype ==  6) //go to inferred results
+			insertEntryInference(mltobj.timestamp, mltobj.isStart, 1, mltobj.inferred_results_or_label_info); // 1 means accel inference
+		else if(mltobj.datatype ==  7) 
+			insertEntryLabel(mltobj.timestamp, true, 0, mltobj.inferred_results_or_label_info);
+		else if(mltobj.datatype ==  8)
+			insertEntryLabel(mltobj.timestamp, false, 0, mltobj.inferred_results_or_label_info);
+
+	}
+
+
+
+	/*
+	public boolean removeEntry(long _rowIndex) {
+		return db.delete(DATABASE_TABLE, KEY_ID + "=" + _rowIndex, null) > 0;
+	}
+	 */
+	public boolean removeAllEntries() {
+		return db.delete(TABLE_NAME_EVENT_IDS, null, null) > 0 && 
+		db.delete(TABLE_NAME_SOURCES, null, null) > 0 &&
+		db.delete(TABLE_NAME_EVENTS, null, null) > 0 &&
+		db.delete(TABLE_NAME_INFERENCES, null, null) > 0 &&
+		db.delete(TABLE_NAME_LABEL, null, null) > 0 &&
+		db.delete(TABLE_NAME_LOCATION, null, null) > 0 &&
+		db.delete(TABLE_NAME_EXPERIMENTS, null, null) > 0
+		;
+
+	}
+	/*
+	public Cursor getAllEntries() {
+		return db.query(DATABASE_TABLE, new String[] { KEY_ID, KEY_NAME },
+				null, null, null, null, null);
+	}
+
+	public MyObject getEntry(long _rowIndex) {
+		// TODO: Return a cursor to a row from the database and
+		// use the values to populate an instance of MyObject
+
+		String selection = KEY_ID + "=" + _rowIndex;
+		Cursor cur = db.query(DATABASE_TABLE, new String[] { KEY_ID, KEY_NAME },
+				selection, null, null, null, null);
+
+		ContentValues values = new ContentValues();
+		cur.moveToFirst();
+		int id = cur.getInt(0);
+		String name = cur.getString(1);
+		values.put(KEY_ID,id);
+		values.put(KEY_NAME,name);
+
+		MyObject objectInstance = new MyObject(values);
+		return objectInstance;
+	}
+
+	public boolean updateEntry(long _rowIndex, MyObject _myObject) {
+		// TODO: Create a new ContentValues based on the new object
+		// and use it to update a row in the database.
+		return true;
+	}
+	 */
+	public long getDbSize()
+	{
+		File file = new File(this.getPathOfDatabase());
+		return file.length();
+	}
+
+	private static class myDbHelper extends SQLiteOpenHelper {
+
+		public myDbHelper(Context context, String name, CursorFactory factory,
+				int version) {
+			super(context, name, factory, version);
+		}
+
+		// Called when no database exists in disk and the helper class needs
+		// to create a new one.
+		@Override
+		public void onCreate(SQLiteDatabase _db) {
+			_db.execSQL(CREATE_TABLE_SOURCES);
+			_db.execSQL(CREATE_TABLE_EVENT_IDS);
+			_db.execSQL(CREATE_TABLE_EVENTS);
+			_db.execSQL(CREATE_TABLE_INFERENCE);
+			_db.execSQL(CREATE_TABLE_LABEL);
+			_db.execSQL(CREATE_TABLE_EXPERIMENTS);			
+			_db.execSQL(CREATE_TABLE_LOCATION);
+		}
+
+		// Called when there is a database version mismatch meaning that the
+		// version
+		// of the database on disk needs to be upgraded to the current version.
+		@Override
+		public void onUpgrade(SQLiteDatabase _db, int _oldVersion,
+				int _newVersion) {
+			// Log the version upgrade.
+			Log.w("TaskDBAdapter", "Upgrading from version " + _oldVersion
+					+ " to " + _newVersion
+					+ ", which will destroy all old data");
+
+			// Upgrade the existing database to conform to the new version.
+			// Multiple
+			// previous versions can be handled by comparing _oldVersion and
+			// _newVersion
+			// values.
+
+			// The simplest case is to drop the old table and create a new one.
+			_db.execSQL("DROP TABLE IF EXISTS " + CREATE_TABLE_SOURCES);	// correct?
+			_db.execSQL("DROP TABLE IF EXISTS " + CREATE_TABLE_EVENT_IDS);  // correct?
+			_db.execSQL("DROP TABLE IF EXISTS " + CREATE_TABLE_EVENTS);  // correct?
+			_db.execSQL("DROP TABLE IF EXISTS " + CREATE_TABLE_INFERENCE);	// correct?
+			_db.execSQL("DROP TABLE IF EXISTS " + CREATE_TABLE_LOCATION);  // correct?			
+			_db.execSQL("DROP TABLE IF EXISTS " + CREATE_TABLE_LABEL);  // correct?
+			_db.execSQL("DROP TABLE IF EXISTS " + CREATE_TABLE_EXPERIMENTS);	// correct?
+
+			// Create a new one.
+			onCreate(_db);
+		}
+	}
+
+	public String getPathOfDatabase()
+	{
+		return db.getPath();
+	}
+
+
+}
+
+
+
+
+
+
+/*package edu.dartmouthcs.mltoolkit.Storage;
+
+//*******************************************************************
+//** Listing 7-1: Skeleton code for a standard database adapter implementation
+import java.io.File;
+
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.database.SQLException;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+import android.database.sqlite.SQLiteDatabase.CursorFactory;
+import android.util.Log;
+
+public class MyDBAdapter {
+	private String DATABASE_NAME;// = "myDatabase.db";
+	private static final String DATABASE_TABLE = "mainTable";
+	private static final int DATABASE_VERSION = 1;
+
+	// The index (key) column name for use in where clauses.
+	public static final String KEY_ID = "_id";
+
+	// The name and column index of each column in your database.
+	public static final String KEY_NAME = "data";
+	public static final int NAME_COLUMN = 1;
+	// TODO: Create public field for each column in your table.
+
+
+	private long insert_count;
+	private static final long MAX_INSERT_PER_TRANSACTION = 500;//0;
+	private ML_toolkit_object mlobj;
+
+
+	// SQL Statement to create a new database.
+	private static final String DATABASE_CREATE = "create table "
+			+ DATABASE_TABLE + " (" + KEY_ID
+			+ " integer primary key autoincrement, " + KEY_NAME
+			+ " text not null);";
+
+	// Variable to hold the database instance
+	private SQLiteDatabase db;
+	// Context of the application using the database.
+	private final Context context;
+	// Database open/upgrade helper
+	private myDbHelper dbHelper;
+
+	public boolean database_online;
+
+	public MyDBAdapter(Context _context, String database_name) {
+		context = _context;
+
+		this.DATABASE_NAME = database_name;
+		dbHelper = new myDbHelper(context, DATABASE_NAME, null,
+				DATABASE_VERSION);
+	}
+
+	public MyDBAdapter open() throws SQLException {
+		db = dbHelper.getWritableDatabase();
+		database_online = true;
+		return this;
+	}
+
+	public void close() {
+		database_online = false;
+		//db.setTransactionSuccessful();
+		insert_count=0;
+		//db.endTransaction(); 
+		db.close();
+	}
+
+	public long getDbSize()
+	{
+		File file = new File(this.getPathOfDatabase());
+		return file.length();
+	}
+
+	public int insertEntry(Object obj) {
+		// TODO: Create a new ContentValues to represent my row
+		// and insert it into the database.
+
+
+
+
+		ContentValues values = _myObject.getValue();
+		int index = 0;
+
+		/*
+		Log.d("XY", "Insersion count "+insert_count);
+		index = (int)db.insert(DATABASE_TABLE, null, values);
+		insert_count++;
+ */
+
+/*
+		try{
+			if (insert_count == 0) db.beginTransaction();
+
+			index = (int)db.insert(DATABASE_TABLE, null, values);
+			insert_count++;
+
+			//Log.d("XY", "Insersion count "+insert_count);
+			if(insert_count == MAX_INSERT_PER_TRANSACTION  ) {
+				//Log.d("XY", "trasaction sucessful");
+
+				db.setTransactionSuccessful();
+			}
+		}catch (SQLException e) {
+		} finally {
+			if(insert_count == MAX_INSERT_PER_TRANSACTION  ){ 
+				insert_count=0;
+				db.endTransaction();
+			}
+		}
+
+		return index;
+	}
+
+	public boolean removeEntry(long _rowIndex) {
+		return db.delete(DATABASE_TABLE, KEY_ID + "=" + _rowIndex, null) > 0;
+	}
+
+	public String getPathOfDatabase()
+	{
+		return db.getPath();
+	}
+
+	public boolean removeAllEntries() {
+		return db.delete(DATABASE_TABLE, null, null) > 0;
+	}
+
+	public Cursor getAllEntries() {
+		return db.query(DATABASE_TABLE, new String[] { KEY_ID, KEY_NAME },
+				null, null, null, null, null);
+	}
+
+	public MyObject getEntry(long _rowIndex) {
+		// TODO: Return a cursor to a row from the database and
+		// use the values to populate an instance of MyObject
+
+		String selection = KEY_ID + "=" + _rowIndex;
+		Cursor cur = db.query(DATABASE_TABLE, new String[] { KEY_ID, KEY_NAME },
+				selection, null, null, null, null);
+
+		ContentValues values = new ContentValues();
+		cur.moveToFirst();
+		int id = cur.getInt(0);
+		String name = cur.getString(1);
+		values.put(KEY_ID,id);
+		values.put(KEY_NAME,name);
+
+		MyObject objectInstance = new MyObject(values);
+		return objectInstance;
+	}
+
+	public boolean updateEntry(long _rowIndex, MyObject _myObject) {
+		// TODO: Create a new ContentValues based on the new object
+		// and use it to update a row in the database.
+		return true;
+	}
+
+	private static class myDbHelper extends SQLiteOpenHelper {
+
+		public myDbHelper(Context context, String name, CursorFactory factory,
+				int version) {
+			super(context, name, factory, version);
+		}
+
+		// Called when no database exists in disk and the helper class needs
+		// to create a new one.
+		@Override
+		public void onCreate(SQLiteDatabase _db) {
+			_db.execSQL(DATABASE_CREATE);
+		}
+
+		// Called when there is a database version mismatch meaning that the
+		// version
+		// of the database on disk needs to be upgraded to the current version.
+		@Override
+		public void onUpgrade(SQLiteDatabase _db, int _oldVersion,
+				int _newVersion) {
+			// Log the version upgrade.
+			Log.w("TaskDBAdapter", "Upgrading from version " + _oldVersion
+					+ " to " + _newVersion
+					+ ", which will destroy all old data");
+
+			// Upgrade the existing database to conform to the new version.
+			// Multiple
+			// previous versions can be handled by comparing _oldVersion and
+			// _newVersion
+			// values.
+
+			// The simplest case is to drop the old table and create a new one.
+			_db.execSQL("DROP TABLE IF EXISTS " + DATABASE_TABLE);
+			// Create a new one.
+			onCreate(_db);
+		}
+	}
+
+
+}*/
