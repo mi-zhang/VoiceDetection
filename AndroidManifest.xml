@@ -11,14 +11,6 @@
     <uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.VIBRATE" />
-     <!-- used to communicate with Skyhook's servers -->
-    <uses-permission android:name="android.permission.INTERNET" />
-    <!-- enables WiFi, if disabled, for the duration of a location request -->
-    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
-    <!-- used to obtain information about the WiFi environment -->
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <!-- used to obtain cell tower ID -->
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
         

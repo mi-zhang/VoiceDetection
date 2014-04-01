@@ -131,6 +131,47 @@ public class MyDataTypeConverter{
 		return byts;
 	}
 
+	/* ============For audio ============= */
+	public static byte[] toByta(float[] voicingFeatures, byte[] inferanceResults, float[] observationProbability, int[] numberOfPeaks, float[] autoCorrelationPeaks, short[] autoCorrelationPeakLags) {
+
+		byte[] byts = new byte[voicingFeatures.length*4 + inferanceResults.length + observationProbability.length*4 + numberOfPeaks.length*4
+		                       + numberOfPeaks[0]*4 + numberOfPeaks[0]*2];
+		int lengthCoveredSofar = 0;
+		
+		//voicingFeatures
+		for (int i = 0; i < voicingFeatures.length; i++)
+			System.arraycopy(toByta(voicingFeatures[i]), 0, byts, i * 4, 4);
+		lengthCoveredSofar = voicingFeatures.length * 4;
+		
+		//inferanceResults
+		for (int i = 0; i < inferanceResults.length; i++)
+			System.arraycopy(toByta(inferanceResults[i]), 0, byts, lengthCoveredSofar + i, 1);
+		lengthCoveredSofar = lengthCoveredSofar + inferanceResults.length;
+		
+		//observationProbability
+		for (int i = 0; i < observationProbability.length; i++)
+			System.arraycopy(toByta(observationProbability[i]), 0, byts, lengthCoveredSofar + i * 4, 4);
+		lengthCoveredSofar = lengthCoveredSofar + observationProbability.length*4;
+		
+		//numberOfPeaks
+		for (int i = 0; i < numberOfPeaks.length; i++)
+			System.arraycopy(toByta(numberOfPeaks[i]), 0, byts, lengthCoveredSofar + i * 4, 4);
+		lengthCoveredSofar = lengthCoveredSofar + numberOfPeaks.length*4;
+		
+		//autoCorrelationPeaks
+		for (int i = 0; i < numberOfPeaks[0]; i++)
+			System.arraycopy(toByta(autoCorrelationPeaks[i]), 0, byts, lengthCoveredSofar + i * 4, 4);
+		lengthCoveredSofar = lengthCoveredSofar + numberOfPeaks[0]*4;
+		
+		//autoCorrelationPeakLags
+		for (int i = 0; i < numberOfPeaks[0]; i++)
+			System.arraycopy(toByta(autoCorrelationPeakLags[i]), 0, byts, lengthCoveredSofar + i * 2, 2);
+		
+		return byts;
+		
+	}
+	
+	
 	/* ========================= */
 
 	public static byte[] toByta(boolean data) {
@@ -447,5 +488,8 @@ public class MyDataTypeConverter{
 		// ----------
 		return strs;
 	}
+	
+	
+	
 
 }

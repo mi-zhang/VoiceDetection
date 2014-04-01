@@ -2,40 +2,9 @@
 
 //double mean_unvoiced[3] = { 0.409640767967304	11.70000325870890	0.487373951952576};
 //double mean_voiced[3] = {0.958387666717486	4.74894514767933	0.198286016529145};
+double mean_unvoiced[3] = {0.21,	15.70,	0.20};
+double mean_voiced[3] = {0.66,	4.75,  0.49};
 
-/*
- * **************************************************
- * This is Mi's parameters
- * **************************************************
- */
-double mean_unvoiced[3] = {0.23, 7.00,	0.2};
-double mean_voiced[3] = {0.45, 7.89, 0.36};
-
-// This is Mi's parameters
-//double mean_unvoiced[3] = {0.22, 26.92,	0.21};
-//double mean_voiced[3] = {0.53,	11.40,  0.3};
-
-
-double inv_cov_unvoiced[3][3] = {{46.78, 0.11, -20.65},{0.11, 0.0119, -0.299},{-20.65, -0.299, 133.5476}};
-double inv_cov_voiced[3][3] = {{32.2536, 0.2621, -25.4642},{0.2621, 0.0253, -0.4298},{-25.4642, -0.4289, 66.2642}};
-
-
-//changed to log for viterbi
-double transitionMatrix[2][2] = {{-0.0132, -4.3352}, {-2.9269, -0.0550}};//log(transitionProb)
-double prior[2] = {0.5,0.5};
-
-//converted to log for easy use in viterbi
-double denom_gauss_unvoiced = 0.67; // loge(((2*pi)^(3/2))*(det(speech_cov(:,:,1))^0.5))
-double denom_gauss_voiced = 1.01; // loge(((2*pi)^(3/2))*(det(speech_cov(:,:,2))^0.5))
-
-
-/*
- * **************************************************
- * This is Mash's parameters
- * **************************************************
- *
-double mean_unvoiced[3] = {0.21, 15.70,	0.20};
-double mean_voiced[3] = {0.66, 4.75, 0.49};
 
 double inv_cov_unvoiced[3][3] = {{46.3543,  -0.0561,  -14.4209},{-0.0561,  0.0164,  -0.4166},{-14.4209,  -0.4166,  119.4729}};
 double inv_cov_voiced[3][3] = {{38.2671,   -0.0561,   -9.9948},{-0.0561,    0.0717,    0.0722},{-9.9948,    0.0722,   30.6466}};
@@ -48,14 +17,6 @@ double prior[2] = {0.5,0.5};
 //converted to log for easy use in viterbi
 double denom_gauss_unvoiced = 0.5767; // loge(((2*pi)^(3/2))*(det(speech_cov(:,:,1))^0.5))
 double denom_gauss_voiced = 0.5865; // loge(((2*pi)^(3/2))*(det(speech_cov(:,:,2))^0.5))
-*/
-
-
-
-
-
-
-
 
 /*
 double mean_unvoiced[3] = { 0.2768, 11.1210, 0.1827 };

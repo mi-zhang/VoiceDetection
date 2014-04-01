@@ -24,10 +24,9 @@ public class MyDBAdapter {
 	
 	private String DATABASE_NAME;
 	private static final int DATABASE_VERSION = 3;
-	private static final long MAX_INSERT_PER_TRANSACTION = 1500; //write after 1500 transactions
+	private static final long MAX_INSERT_PER_TRANSACTION = 1500; // write after 1500 transactions
 	private long insert_count;
 	public boolean database_online;
-
 
 	/*
 	 * database tables
@@ -51,7 +50,7 @@ public class MyDBAdapter {
 	private static final String CREATE_TABLE_EXPERIMENTS = "CREATE TABLE IF NOT EXISTS " +
 	"experiments(experiment_id INTEGER PRIMARY KEY ASC AUTOINCREMENT, experiment_name TEXT, " +
 	"experiment_start DATETIME, experiment_end DATETIME);";
-
+	
 	private static final String TABLE_NAME_EVENT_IDS = "event_ids";
 	private static final String TABLE_NAME_SOURCES = "sources";
 	private static final String TABLE_NAME_EVENTS = "events";

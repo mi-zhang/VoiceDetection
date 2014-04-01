@@ -62,7 +62,7 @@ public class SocialDPUStates {
 
 	// write after how many entries, used in CircularBuffer
 	public final int writeAfterThisManyValues = 200;
-	public final int maximumDbSize = 6*1000000;
+	public final int maximumDbSize = 1000000;
 
 	//write to a file	
 	public String currentFileName;

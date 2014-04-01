@@ -26,8 +26,10 @@ extern kiss_fft_cpx *fftx;
 extern jshort buf[256];
 extern float *normalizedData;
 extern double *magnSpect;
-extern double *acorrPeakValueArray;
-extern double *acorrPeakLagValueArray;
+extern float *acorrPeakValueArray;
+extern float *dataHamming;
+extern jshort *acorrPeakLagValueArray;
+
 
 
 
@@ -37,10 +39,10 @@ void computePowerSpec(kiss_fft_cpx*,kiss_fft_scalar*,int);
 void computeMagnitudeSpec(kiss_fft_scalar*,kiss_fft_scalar*,int);
 void computeHammingFactors();
 double computeEnergy(const kiss_fft_scalar *powerSpec,int len);
-void computeSpectralEntropy2(kiss_fft_scalar* magnitudeSpec_l,int len);
+float computeSpectralEntropy2(kiss_fft_scalar* magnitudeSpec_l,int len);
 void whitenPowerSpectrumToCpx(const kiss_fft_scalar *powerSpec, kiss_fft_cpx *out, int energy, int len);
-void computeAutoCorrelationPeaks2(const kiss_fft_scalar* powerSpec_l, kiss_fft_cpx* powerSpecCpx_l, int NOISE_01_l, int len);
-void findPeaks(const float *in, int length, int *numPeaks, float *maxPeakVal, int *maxPeakLag);
+void computeAutoCorrelationPeaks2(const kiss_fft_scalar* powerSpec_l, kiss_fft_cpx* powerSpecCpx_l, int NOISE_01_l, int len, jfloat* autoCorPeakVal, jshort* autoCorPeakLg);
+void findPeaks(const float *in, int length, int *numPeaks, float *maxPeakVal, int *maxPeakLag, jfloat* autoCorPeakVal, jshort* autoCorPeakLg);
 void normalizeAcorr(const float *in, float *out, int outLen);
 void destroyVoicedFeaturesFunction();
 void initVoicedFeaturesFunction();

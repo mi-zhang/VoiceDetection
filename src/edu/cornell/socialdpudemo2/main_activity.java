@@ -21,10 +21,8 @@ import org.apache.http.util.EntityUtils;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
-import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -45,7 +43,7 @@ import edu.dartmouthcs.mltoolkit.R;
 public class main_activity extends Activity {
 	
 	
-	// service controller class for starting and stopping sensor (we only have audio sensor in the SocialDPU)
+	//service controller class for starting and stopping sensor (we only have audio sensor in the SocialDPU)
 	private static ServiceController serviceController = null;
 	public static Context context;
 	private static Timer audioTimer; // this time periodically update the voice/non-voice inference
@@ -65,11 +63,6 @@ public class main_activity extends Activity {
 	private TextView IMEITextView;
 	
 
-	// shared preferences
-	private SharedPreferences sharedPreferences;
-	// configurations
-	private boolean isAudioServiceStarted; 
-		
 	private static final String TAG = "Voice Detection";	
 	
 	@Override
@@ -81,13 +74,7 @@ public class main_activity extends Activity {
 		super.onCreate(savedInstanceState);
 
 		//
-		appState = (SocialDPUApplication2) getApplicationContext();
-		
-		// Get shared preferences
-        sharedPreferences = getSharedPreferences("mSharedPreferences", Context.MODE_PRIVATE);   
-        // Get saved configurations 
-        isAudioServiceStarted = sharedPreferences.getBoolean("isAudioServiceStarted", false);
-        
+		appState = (SocialDPUApplication2)getApplicationContext();
 		//
 		serviceController = appState.dpuStates.getServiceController();
 
@@ -103,16 +90,8 @@ public class main_activity extends Activity {
 		startnStopSensingButton = (Button) findViewById(R.id.button_startnstopsensing);
 		uploadButton = (Button) findViewById(R.id.button_upload);
 		IMEITextView = (TextView) findViewById(R.id.textview_imei);
-		
-		// get the IMEI
-		TelephonyManager mTelephonyMgr = (TelephonyManager)getSystemService(TELEPHONY_SERVICE);
-		appState.dpuStates.IMEI = mTelephonyMgr.getDeviceId();				
-		IMEITextView.setText("My IMEI Number: " + appState.dpuStates.IMEI);
-		
-		 // Initialize UI
-        initiateStartnStopSensingButton();      
+		IMEITextView.setText(appState.dpuStates.IMEI);
 				
-        // initialize listeners
 		initializeClickListeners();
 		
 		/*
@@ -209,15 +188,6 @@ public class main_activity extends Activity {
 	
 	// =============================================================================================
 	
-	private void initiateStartnStopSensingButton() {
-    	
-    	if (isAudioServiceStarted == true) {
-    		startnStopSensingButton.setText("Stop Sensing");
-        } else {
-    		startnStopSensingButton.setText("Start Sensing");
-        }
-	}
-	
 	private void initializeClickListeners() {
 		
 		// Called when the user clicks the startnStopSensingButton.
@@ -242,15 +212,10 @@ public class main_activity extends Activity {
 					if(appState.dpuStates.savedAudioSensorOn == true) {
 						
 						serviceController.startAudioSensor();
-						isAudioServiceStarted = true;
-						// Save the state of isAudioServiceStarted	
-				        Editor editor = sharedPreferences.edit();
-				        editor.putBoolean("isAudioServiceStarted", isAudioServiceStarted);
-				        editor.commit();
 						//Toast.makeText(this, "Audio service is started.", Toast.LENGTH_SHORT).show(); 
 					}
 					
-					// activity on or off
+					//activity on or off
 					activity_paused = false;
 					
 					// Update UI
@@ -261,15 +226,10 @@ public class main_activity extends Activity {
 					
 					appState.dpuStates.applicatin_starated = false;			
 					
-					// Stop the audio service
+					// Start the audio service
 					if(appState.dpuStates.savedAudioSensorOn == true) {
 						
 						serviceController.stopAudioSensor();
-						isAudioServiceStarted = false;
-						// Save the state of isAudioServiceStarted	
-				        Editor editor = sharedPreferences.edit();
-				        editor.putBoolean("isAudioServiceStarted", isAudioServiceStarted);
-				        editor.commit();
 						//Toast.makeText(this, "Audio service is started.", Toast.LENGTH_SHORT).show(); 
 					}
 					

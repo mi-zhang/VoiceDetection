@@ -7,7 +7,6 @@
 #include <stdio.h>
 
 
-
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,   "JNI_DEBUGGING", __VA_ARGS__)
 
 
@@ -22,7 +21,10 @@ double *Dmax=NULL;
 int **maximalPath=NULL;
 int indexMaximalPath = 0;
 int indexCurrentVteribiPath = 0;
-double *currentVteribiPath = NULL;
+
+//double *currentVteribiPath = NULL;
+jbyte* currentVteribiPath = NULL;
+
 //double *featureAndInference=NULL;
 //char s[32];
 
@@ -67,13 +69,13 @@ void viterbiInitialize()
 
 
 	//initialize the double array
-	currentVteribiPath = (double*)malloc(LOOK_BACK_LENGTH * sizeof(double));
+	currentVteribiPath = (jbyte*)malloc(LOOK_BACK_LENGTH * sizeof(jbyte));
 	//featureAndInference = (double*)malloc((2 + LOOK_BACK_LENGTH) * sizeof(double));//first two are for probabilities
 
 	//initalize maximalPath to -1
 
 	for(i=0;i<LOOK_BACK_LENGTH;i++){
-		currentVteribiPath[i] = 0.0;
+		currentVteribiPath[i] = 0;
 		for(j=0;j<2;j++)
 			maximalPath[i][j] = 0;
 	}
@@ -100,7 +102,7 @@ void viterbiDestroy()
 }
 
 
-int getViterbiInference(double *x,double *featureAndInference){
+int getViterbiInference(double *x, double *observationLikelihood, jbyte* viterbitPath) {
 
 
 	//emissionVoiced = computeMvnPdf(x,mean_voiced, inv_cov_voiced, denom_gauss_voiced);
@@ -150,7 +152,7 @@ int getViterbiInference(double *x,double *featureAndInference){
 		//sprintf(s,"%d %d %d %d", (LOOK_BACK_LENGTH+indexMaximalPath-j)%LOOK_BACK_LENGTH,indexMaximalPath,(int)currentVteribiPath[i+1],indexCurrentVteribiPath);
 		//LOGE(s);
 
-		currentVteribiPath[i] = (double) maximalPath[(LOOK_BACK_LENGTH+indexMaximalPath-j)%LOOK_BACK_LENGTH][(int)currentVteribiPath[i+1]];
+		currentVteribiPath[i] = (char) maximalPath[(LOOK_BACK_LENGTH+indexMaximalPath-j)%LOOK_BACK_LENGTH][(int)currentVteribiPath[i+1]];
 
 	}
 
@@ -166,9 +168,12 @@ int getViterbiInference(double *x,double *featureAndInference){
 	//else
 		//return 1;
 
-	featureAndInference[0] = emissionProbabilities[0];
-	featureAndInference[1] = emissionProbabilities[1];
-	memcpy( featureAndInference + 2, currentVteribiPath, LOOK_BACK_LENGTH*sizeof(double) ); //copy inference
+	observationLikelihood[0] = emissionProbabilities[0];
+	observationLikelihood[1] = emissionProbabilities[1];
+	// void * memcpy ( void * destination, const void * source, size_t num );
+	memcpy(viterbitPath, currentVteribiPath, LOOK_BACK_LENGTH*sizeof(jbyte) ); //copy inference
+
+	//memcpy( featureAndInference + 2, currentVteribiPath, LOOK_BACK_LENGTH*sizeof(double) ); //copy inference
 
 
 	return 1;

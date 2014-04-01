@@ -8,11 +8,13 @@
 #include <jni.h>
 #include <android/log.h>
 
+
 #define LOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, "JNI_DEBUGGING", __VA_ARGS__)
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG,   "JNI_DEBUGGING", __VA_ARGS__)
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO,    "JNI_DEBUGGING", __VA_ARGS__)
 #define LOGW(...) __android_log_print(ANDROID_LOG_WARN,    "JNI_DEBUGGING", __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,   "JNI_DEBUGGING", __VA_ARGS__)
+
 
 //**********************************************************************************
 //
@@ -55,22 +57,22 @@ double sum_full_data_squared;
 jshort buf[256];
 jdouble mean_full_data;
 float *normalizedData=NULL;//[FRAME_LENGTH];
-double *origData=NULL;//
+//double *origData=NULL;//
 double *factorsHanning=NULL;
-double *factorsHamming=NULL;
+double * factorsHamming = NULL;
 float *dataHanning=NULL;
 float *dataHamming=NULL;
-double *acorrPeakLagValueArray=NULL;
-double *acorrPeakValueArray=NULL;
+//double *acorrPeakLagValueArray=NULL;
+jshort *acorrPeakLagValueArray=NULL;
+float *acorrPeakValueArray=NULL;
 double *magnSpect=NULL;
 
-// new noise levels
-// the values set up here are for 1% noise level
+//new noise levels
+// How is it calculated?
+// square of noise FFT (read the blog)
 float noise_levels_squared[] = {313323.3139,3447421.4631,849487.3317,4970466.8673,113357.2991,5555636.7655,1855021.6219,895606.1497,3065567.8316,776335.2660,854274.0327,1090088.0994,3019730.0877,3655844.2966,236999.0142,4304609.4843,6405226.2696,1843092.3695,9173316.6939,21630828.8307,16263388.4042,11404754.1548,19941196.6663,1457255.9371,18168342.4730,42052289.2467,44042325.6875,32247722.5981,2011676.3041,6074299.4380,5882211.8827,9995846.5714,7108377.8073,9648296.5913,7957625.2395,4869497.9966,640651.8908,6916802.0686,2757616.1853,4164544.5107,12342580.5526,13503568.5890,13845908.3417,9493927.5368,3114302.4080,2392750.0994,8492050.7365,10400196.9471,1305503.7668,1086534.2132,4764130.5073,16487630.4039,8986034.1857,13336078.2968,31309463.3870,10731556.8386,1014672.1116,34366201.4782,50240615.6186,21330372.7745,24961380.5634,10249259.9054,30486819.3726,16894792.6252,7039800.0114,12147734.2424,2267833.3929,902650.3518,12137600.2109,14307545.3700,5672974.7581,8532034.5470,2681650.1898,2414907.9629,18043696.6965,6332893.9686,4360285.3629,25501331.0764,11391750.0371,21282070.4616,16918551.0222,5188720.3195,1865565.8037,5893415.0590,33805262.5840,30592159.4570,7335110.9880,14156640.2657,4487435.8089,988106.6597,728928.4012,8288801.8810,28150424.8026,32061833.2068,11747452.8986,575020.8570,6235905.0577,10763087.3341,8611935.2125,2721796.2762,11942092.8518,10560377.4934,5342085.1527,8831059.9619,16781420.4441,12025451.2722,6820551.0588,8460722.3187,3395084.4233,1645975.5070,9650400.4853,21628000.1132,12631230.1225,19762860.7356,2021392.2510,174910.5152,2625306.3453,7631385.1782,542882.9105,131875.3727,9141038.7323,22794483.8868,3463261.7127,2486781.1943,22100238.5963,32082266.0727,3480147.2106,5468995.4561};
 int indexx;
 int prevIndex;
-
-
 
 
 //**********************************************************************************
@@ -120,14 +122,14 @@ void initVoicedFeaturesFunction()
 
 	fftx = (kiss_fft_cpx *) malloc(FFT_LENGTH * sizeof(kiss_fft_cpx));
 	normalizedData = (float *) malloc(FRAME_LENGTH * sizeof(float));
-	origData = (double *) malloc(FRAME_LENGTH * sizeof(double));
+	//origData = (double *) malloc(FRAME_LENGTH * sizeof(double));
 	magnSpect= (double *) malloc(FFT_LENGTH * sizeof(double));
 	factorsHanning = (double *) malloc(FRAME_LENGTH * sizeof(double));
 	factorsHamming = (double *) malloc(FRAME_LENGTH * sizeof(double));
 	dataHanning = (float *) malloc(FRAME_LENGTH * sizeof(float));
 	dataHamming = (float *) malloc(FRAME_LENGTH * sizeof(float));
-	acorrPeakValueArray = (double *) malloc(HALF_FRAME_LENGTH * sizeof(double));
-	acorrPeakLagValueArray = (double *) malloc(HALF_FRAME_LENGTH * sizeof(double));
+	acorrPeakValueArray = (float *) malloc(HALF_FRAME_LENGTH * sizeof(float));
+	acorrPeakLagValueArray = (jshort *) malloc(HALF_FRAME_LENGTH * sizeof(jshort));
 
 
 	for (i = 0; i < FFT_LENGTH; i++) {
@@ -182,7 +184,7 @@ void destroyVoicedFeaturesFunction()
 
 	SAFE_DELETE(fftx);
 	SAFE_DELETE(normalizedData);
-	SAFE_DELETE(origData);
+	//SAFE_DELETE(origData);
 	SAFE_DELETE(factorsHanning);
 	SAFE_DELETE(factorsHamming);
 	SAFE_DELETE(dataHanning);
@@ -202,22 +204,23 @@ void destroyVoicedFeaturesFunction()
 //**********************************************************************************
 //
 // 	computes the autorcorrelation values
+//	This uses cross-correlation theorem
+// Reference: http://mathworld.wolfram.com/Cross-CorrelationTheorem.html
 //
 //**********************************************************************************
-void computeAutoCorrelationPeaks2(const kiss_fft_scalar* powerSpec_l, kiss_fft_cpx* powerSpecCpx_l, int NOISE_01_l, int len) {
-
+void computeAutoCorrelationPeaks2(const kiss_fft_scalar* powerSpec_l, kiss_fft_cpx* powerSpecCpx_l, int NOISE_01_l, int len, jfloat* autoCorPeakVal, jshort* autoCorPeakLg)
+{
 	whitenPowerSpectrumToCpx(powerSpec_l, powerSpecCpx_l, NOISE_01_l, len);
 
 	kiss_fftri(cfgInv, powerSpecCpx_l, acorr);
 
 	normalizeAcorr(acorr, normalizedAcorr, HALF_FRAME_LENGTH);
 
-	//find peaks using autocorrealation values
+	// find peaks using autocorrealation values
 	findPeaks(normalizedAcorr, HALF_FRAME_LENGTH,
 		&numAcorrPeaks,
 		&maxAcorrPeakVal,
-		&maxAcorrPeakLag);
-
+		&maxAcorrPeakLag, autoCorPeakVal, autoCorPeakLg);
 
 }
 
@@ -228,15 +231,13 @@ void computeAutoCorrelationPeaks2(const kiss_fft_scalar* powerSpec_l, kiss_fft_c
 // 	computes spectral entropy and relative spectral entropy values
 //
 //**********************************************************************************
-void computeSpectralEntropy2(kiss_fft_scalar* magnitudeSpec_l,int len)
-{
+float computeSpectralEntropy2(kiss_fft_scalar* magnitudeSpec_l, const int len) {
 
 	double sum_spec = 0;
 
 
-
 	//sum data for normalizing later
-	for(i = 0; i< len; i++){
+	for(i = 0; i< len; i++) {
 		sum_spec = sum_spec + magnitudeSpec_l[i];
 	}
 
@@ -307,13 +308,14 @@ void computeSpectralEntropy2(kiss_fft_scalar* magnitudeSpec_l,int len)
 			normed_mean_spec[i] = 0.000001;
 
 		if(norm_spec[i] != 0)
-			rel_spectral_entropy = rel_spectral_entropy + norm_spec[i]*(log( norm_spec[i]) - log(normed_mean_spec[i]));
+			rel_spectral_entropy = rel_spectral_entropy + norm_spec[i]*(log(norm_spec[i]) - log(normed_mean_spec[i]));
 	}
 
 	//Debug code
 	//char buffer [500];
 	//sprintf (buffer, "FrameNO:%d RSE:%f NrmedMeanSPec %f ", indexx, rel_spectral_entropy, sum_spec);
 	//LOGE(buffer);
+	return (float)rel_spectral_entropy;
 }
 
 
@@ -339,11 +341,17 @@ double computeEnergy(const kiss_fft_scalar *powerSpec2,int len)
 //	needed for computing spectral entropy and relative spectral entropy values
 //
 //**********************************************************************************
-void computeMagnitudeSpec(kiss_fft_scalar* src,kiss_fft_scalar* dest,int len)
+void computeMagnitudeSpec(kiss_fft_scalar* src, kiss_fft_scalar* dest, int len)
 {
-	for(j=0; j<len; j++){
-		dest[j] = sqrt(src[j]);
-		magnSpect[j]=dest[j];
+
+	//for now magnitude spectrum is only used for spectral entropy
+	//we will be adding noise with spectral entropy also
+	//+ 2*noise_levels_squared[j]
+
+	for(j=0; j<len; j++) {
+		dest[j] = sqrt(src[j] + 2*noise_levels_squared[j]);
+		//dest[j] = sqrt(src[j]);
+		magnSpect[j] = dest[j];
 	}
 }
 
@@ -368,9 +376,9 @@ normalizeAcorr(const float *in, float *out, int outLen)
 // 	normalize autocorrelation values to stay between 1 or -1
 //
 //**********************************************************************************
-void computePowerSpec(kiss_fft_cpx* fft_l,kiss_fft_scalar* dest,int len)
-{
-	for(j=0; j<len; j++){
+void computePowerSpec(kiss_fft_cpx* fft_l, kiss_fft_scalar* dest, int len) {
+
+	for(j=0; j<len; j++) {
 		dest[j] = fftx[j].r * fftx[j].r + fftx[j].i * fftx[j].i;
 	}
 }
@@ -381,11 +389,10 @@ void computePowerSpec(kiss_fft_cpx* fft_l,kiss_fft_scalar* dest,int len)
 // 	adds low power white noise to the signal to counter against low power peridic humming noise
 //
 //**********************************************************************************
-void whitenPowerSpectrumToCpx(const kiss_fft_scalar *powerSpec, kiss_fft_cpx *out, int energy, int len)
-{
+void whitenPowerSpectrumToCpx(const kiss_fft_scalar *powerSpec, kiss_fft_cpx *out, int energy, int len) {
 
-	for(j=0; j<len; j++){
-		out[j].r = powerSpec[j] + 8*noise_levels_squared[j]; //energy;
+	for(j=0; j<len; j++) {
+		out[j].r = powerSpec[j] + 2*noise_levels_squared[j]; //energy;
 		out[j].i = 0;
 	}
 
@@ -395,23 +402,22 @@ void whitenPowerSpectrumToCpx(const kiss_fft_scalar *powerSpec, kiss_fft_cpx *ou
 
 //**********************************************************************************
 //
-// 	zero mean the audio signal
+// 	zero  mean the audio signal
 //
 //**********************************************************************************
-void normalize_data() {
+void normalize_data(const jshort* short_audio, float* normalized_audio) {
 
 	sum_full_data = 0;
 	sum_full_data_squared = 0;
 
 	for(i = 0; i<FRAME_LENGTH; i++) {
-		sum_full_data = sum_full_data + buf[i];///(2^15);
+		sum_full_data = sum_full_data + short_audio[i];///(2^15);
 	}
 
 	mean_full_data = sum_full_data/FRAME_LENGTH;
 
 	for (i = 0; i < FRAME_LENGTH; i++) {
-		normalizedData[i] = buf[i] - mean_full_data;//zero mean the data
-		origData[i] = buf[i];
+		normalized_audio[i] = short_audio[i] - mean_full_data;
 	}
 
 }
@@ -430,11 +436,12 @@ void computeHanningFactors() {
 	}
 }
 
+
 void computeHammingFactors() {
 
 	// Reference: http://www.mathworks.com/help/signal/ref/hamming.html
 	double denom = (double)FRAME_LENGTH-1;
-	for (i = 0; i < FRAME_LENGTH; i++) { //calculate the hanning window
+	for (i = 0; i < FRAME_LENGTH; i++) {
 		factorsHamming[i] = 0.54 -(0.46 * cos( 2.0 * PI * ((double)i / denom) ) );
 	}
 
@@ -445,16 +452,17 @@ void computeHanning() //apply hanning window
 {
 
 	for (j = 0; j < FRAME_LENGTH; j+=1) { //calculate the hanning window
-		dataHanning[j] = factorsHanning[j]*normalizedData[j];
+		dataHanning[j] = factorsHanning[j] * normalizedData[j];
 	}
 }
 
 // Compute Hamming Window
-void computeHamming()
-{
+void computeHamming(const float* normalized_audio, float* data_hamming) {
+
 	for (j = 0; j < FRAME_LENGTH; j+=1) {
-		dataHamming[j] = factorsHamming[j]*normalizedData[j];
+		data_hamming[j] = factorsHamming[j] * normalized_audio[j];
 	}
+
 }
 
 //**********************************************************************************
@@ -462,7 +470,7 @@ void computeHamming()
 // 	find the peak values and corresponding lags of autocorrelation values
 //
 //**********************************************************************************
-void findPeaks(const float *in, int length, int *numPeaks, float *maxPeakVal, int *maxPeakLag)
+void findPeaks(const float *in, int length, int *numPeaks, float *maxPeakVal, int *maxPeakLag, jfloat* autoCorPeakVal, jshort* autoCorPeakLg)
 {
 
 	int i;
@@ -485,7 +493,18 @@ void findPeaks(const float *in, int length, int *numPeaks, float *maxPeakVal, in
 	float localMaxPeakValue = 0;
 	int localMaxPeakIndex = 0;
 
-	for(i=1; i<length; i++){
+	for(i=1; i<length; i++) {
+
+
+		//the underlying logic of finding peaks
+		//First peak is ignored always, because it will always be one.
+		//
+		// First intution is, auto correlation peaks will go down and comne back up
+		//
+		//First if, we are in positive region (i.e., lastVal >= 0 && in[i] >=0) then we will update the peak values repeatedly. And we also update the max acorr and peaks.
+		//Second if, we are going out into a negative region, we will not definitely see any peak or leaving local peak or a positive region. In other words, we are leaving a peak. So, we update local peaklag and peakval
+		//Finally the final if means, if we going into a positive region we have a chance to find a peak. So, we start comparing/finiding again.
+		//
 
 		if(pastFirstZeroCrossing){
 			// are we in a peak?
@@ -509,14 +528,14 @@ void findPeaks(const float *in, int length, int *numPeaks, float *maxPeakVal, in
 			}else if(lastVal >=0 && in[i] < 0 && maxPeak > 0){
 
 				// count the last peak
-				acorrPeakValueArray[tn] = (double)localMaxPeakValue;
-				acorrPeakLagValueArray[tn] = (double)localMaxPeakIndex;
+				autoCorPeakVal[tn] = (jfloat)localMaxPeakValue;
+				autoCorPeakLg[tn] = (jshort)localMaxPeakIndex;
 				tn++;
 
 			}else if(lastVal < 0 && in[i] >= 0){
 				//set the local acorr max to zero
 				localMaxPeakValue = in[i];
-				//localMaxPeakIndex = 0;
+				localMaxPeakIndex = i;
 
 				// then check for new max
 				if(in[i] > maxPeak){

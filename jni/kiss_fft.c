@@ -29,7 +29,7 @@ static void kf_bfly2(
     kiss_fft_cpx * tw1 = st->twiddles;
     kiss_fft_cpx t;
     Fout2 = Fout + m;
-    do{
+    do {
         C_FIXDIV(*Fout,2); C_FIXDIV(*Fout2,2);
 
         C_MUL (t,  *Fout2 , *tw1);
@@ -38,7 +38,7 @@ static void kf_bfly2(
         C_ADDTO( *Fout ,  t );
         ++Fout2;
         ++Fout;
-    }while (--m);
+    } while (--m);
 }
 
 static void kf_bfly4(
