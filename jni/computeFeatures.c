@@ -46,6 +46,7 @@ double featuresValuesTemp[264 + LOOK_BACK_LENGTH]; //(6 + 128 + 128 +  = 262) + 
 double featureAndInference[2+LOOK_BACK_LENGTH];
 double observationLikihood[2];
 char viterbiPath[LOOK_BACK_LENGTH];
+double energy_ratio;
 
 double x[3];
 int inferenceResult;
@@ -117,6 +118,9 @@ void Java_edu_cornell_audioProbe_AudioManager_features(JNIEnv* env, jobject java
 
 	// compute total energy
 	energy = computeEnergy(powerSpec, FFT_LENGTH) / FFT_LENGTH;
+
+	// compute low-high energy ratio
+	energy_ratio = computeLowHighEnergyRatio(powerSpec, FFT_LENGTH);
 
 	// compute Spectral Entropy
 	relSpecEntr = computeSpectralEntropy2(magnitudeSpec, FFT_LENGTH);
