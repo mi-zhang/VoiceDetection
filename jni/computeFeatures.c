@@ -129,7 +129,7 @@ void Java_edu_cornell_audioProbe_AudioManager_features(JNIEnv* env, jobject java
 	computeAutoCorrelationPeaks2(powerSpec, powerSpecCpx, NOISE_LEVEL, FFT_LENGTH, autoCorPeakVal, autoCorPeakLg);
 
 	//write on the feature vector
-	fVector[0] = numAcorrPeaks;
+	fVector[0] = energy_ratio;
 	fVector[1] = maxAcorrPeakVal;
 	fVector[2] = maxAcorrPeakLag;
 	fVector[3] = spectral_entropy;
@@ -150,7 +150,6 @@ void Java_edu_cornell_audioProbe_AudioManager_features(JNIEnv* env, jobject java
 
 	//infer results are already assigned during getViterbiInference call
 
-	// ??? why
 	numOfPeaks[0] = numAcorrPeaks;
 
 	(*env)->ReleaseShortArrayElements(env, audio, buff, JNI_ABORT);
