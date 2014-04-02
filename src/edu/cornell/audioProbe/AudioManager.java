@@ -304,7 +304,7 @@ public class AudioManager {
 				//add the new inference results. 0 = non-human-voice, 1=human-voice. 
 				leavingInference = circularQueueOfInference[indexToCircularQueueOfInference];
 				sumOfPreviousInferences = sumOfPreviousInferences - leavingInference;
-				//currentInference = extractedFeatures[8]; // 0 = non-human-voice, 1 = human-voice
+				// here we only use the first byte!!! other 19 bytes are not used
 				currentInference = inferanceResults[0]; // 0 = non-human-voice, 1 = human-voice
 				
 				Log.e(TAG,"============ Voice/unvoiced, " + currentInference + " ===============");

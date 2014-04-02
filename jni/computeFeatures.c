@@ -42,7 +42,7 @@ double comp[FRAME_LENGTH/2];
 //features
 double energy;
 double relSpecEntr;
-double featuresValuesTemp[264 + LOOK_BACK_LENGTH];//(6 + 128 + 128 +  = 262) + 2 + LOOK_BACK_LENGTH
+double featuresValuesTemp[264 + LOOK_BACK_LENGTH]; //(6 + 128 + 128 +  = 262) + 2 + LOOK_BACK_LENGTH
 double featureAndInference[2+LOOK_BACK_LENGTH];
 double observationLikihood[2];
 char viterbiPath[LOOK_BACK_LENGTH];
@@ -141,8 +141,8 @@ void Java_edu_cornell_audioProbe_AudioManager_features(JNIEnv* env, jobject java
 	inferenceResult = getViterbiInference(x, observationLikihood, inferRes);
 
 	//observation likelihood
-	obsProbVector[0] = (float)observationLikihood[0];
-	obsProbVector[1] = (float)observationLikihood[1];
+	obsProbVector[0] = (float)observationLikihood[0]; // unvoiced
+	obsProbVector[1] = (float)observationLikihood[1]; // voiced
 
 	//infer results are already assigned during getViterbiInference call
 

@@ -80,8 +80,7 @@ int prevIndex;
 // 	initialize voiced features values
 //
 //**********************************************************************************
-void initVoicedFeaturesFunction()
-{
+void initVoicedFeaturesFunction() {
 
 	cfgFwd = kiss_fftr_alloc(FRAME_LENGTH,0, NULL, NULL);
 	cfgInv = kiss_fftr_alloc(FRAME_LENGTH,1, NULL, NULL);
@@ -152,17 +151,11 @@ void initVoicedFeaturesFunction()
 // 	destroy voiced features values
 //
 //**********************************************************************************
-void destroyVoicedFeaturesFunction()
-{
+void destroyVoicedFeaturesFunction() {
 
 	//free memory
 	//SAFE_DELETE(norm_spec);
 	//SAFE_DELETE(prev_spec);
-
-
-	//free
-	//
-
 
 	SAFE_DELETE(unnormed_sum_spec);
 
@@ -196,16 +189,14 @@ void destroyVoicedFeaturesFunction()
 	free(cfgFwd);
 	free(cfgInv);
 
-
 }
-
 
 
 //**********************************************************************************
 //
 // 	computes the autorcorrelation values
 //	This uses cross-correlation theorem
-// Reference: http://mathworld.wolfram.com/Cross-CorrelationTheorem.html
+//  Reference: http://mathworld.wolfram.com/Cross-CorrelationTheorem.html
 //
 //**********************************************************************************
 void computeAutoCorrelationPeaks2(const kiss_fft_scalar* powerSpec_l, kiss_fft_cpx* powerSpecCpx_l, int NOISE_01_l, int len, jfloat* autoCorPeakVal, jshort* autoCorPeakLg)
@@ -224,8 +215,6 @@ void computeAutoCorrelationPeaks2(const kiss_fft_scalar* powerSpec_l, kiss_fft_c
 
 }
 
-
-
 //**********************************************************************************
 //
 // 	computes spectral entropy and relative spectral entropy values
@@ -234,7 +223,6 @@ void computeAutoCorrelationPeaks2(const kiss_fft_scalar* powerSpec_l, kiss_fft_c
 float computeSpectralEntropy2(kiss_fft_scalar* magnitudeSpec_l, const int len) {
 
 	double sum_spec = 0;
-
 
 	//sum data for normalizing later
 	for(i = 0; i< len; i++) {
@@ -254,14 +242,13 @@ float computeSpectralEntropy2(kiss_fft_scalar* magnitudeSpec_l, const int len) {
 		divider_spec = REL_SPEC_WINDOW;
 	}
 
-
 	if(indexx!=0)
 		prevIndex = indexx-1;
 	else
 		prevIndex = REL_SPEC_WINDOW - 1;//means go back to the last index
 
 	//spectral entropy and saving moving average code
-	for(i = 0; i< FFT_LENGTH; i++){
+	for(i = 0; i< FFT_LENGTH; i++) {
 
 		norm_spec[i] = magnitudeSpec_l[i]/(sum_spec + 0.00001); //making a distribution
 
@@ -324,16 +311,42 @@ float computeSpectralEntropy2(kiss_fft_scalar* magnitudeSpec_l, const int len) {
 // 	computed energy or loudness
 //
 //**********************************************************************************
-double computeEnergy(const kiss_fft_scalar *powerSpec2,int len)
-{
+double computeEnergy(const kiss_fft_scalar *powerSpec2, int len) {
+
 	double r=0;
 
-	for(i=0; i<len; i++){
+	for(i=0; i<len; i++) {
 		r += powerSpec2[i];
 	}
 	return r;
 }
 
+//**********************************************************************************
+//
+// 	computed low-high energy ratio
+//
+//**********************************************************************************
+double computeLowHighEnergyRatio(const kiss_fft_scalar *powerSpec2, int len) {
+
+
+	int ratio = 4;
+	int len_bound = len / ratio;
+	double lower_band_energy_sum = 0;
+	double upper_band_energy_sum = 0;
+	double low_high_energy_ratio = 0;
+
+	for(i=0; i<len_bound; i++) {
+		lower_band_energy_sum += powerSpec2[i];
+	}
+	lower_band_energy_sum = lower_band_energy_sum + 0.00001;
+	for(i=len_bound; i<len; i++) {
+		upper_band_energy_sum += powerSpec2[i];
+	}
+	upper_band_energy_sum = upper_band_energy_sum + 0.00001;
+	low_high_energy_ratio = log10(lower_band_energy_sum / upper_band_energy_sum);
+	return low_high_energy_ratio;
+
+}
 
 //**********************************************************************************
 //
@@ -360,8 +373,7 @@ void computeMagnitudeSpec(kiss_fft_scalar* src, kiss_fft_scalar* dest, int len)
 // 	normalize autocorrelation values to stay between 1 or -1
 //
 //**********************************************************************************
-void
-normalizeAcorr(const float *in, float *out, int outLen)
+void normalizeAcorr(const float *in, float *out, int outLen)
 {
 	int i;
 
@@ -373,7 +385,7 @@ normalizeAcorr(const float *in, float *out, int outLen)
 
 //**********************************************************************************
 //
-// 	normalize autocorrelation values to stay between 1 or -1
+//
 //
 //**********************************************************************************
 void computePowerSpec(kiss_fft_cpx* fft_l, kiss_fft_scalar* dest, int len) {
@@ -532,7 +544,7 @@ void findPeaks(const float *in, int length, int *numPeaks, float *maxPeakVal, in
 				autoCorPeakLg[tn] = (jshort)localMaxPeakIndex;
 				tn++;
 
-			}else if(lastVal < 0 && in[i] >= 0){
+			} else if(lastVal < 0 && in[i] >= 0) {
 				//set the local acorr max to zero
 				localMaxPeakValue = in[i];
 				localMaxPeakIndex = i;
@@ -543,7 +555,7 @@ void findPeaks(const float *in, int length, int *numPeaks, float *maxPeakVal, in
 					maxPeakIdx = i;
 				}
 			}
-		}else{
+		} else {
 			if(in[i] <= 0){
 				pastFirstZeroCrossing = 1; //zero crossing is for initial peak (value always one)
 			}
