@@ -2,12 +2,12 @@
 
 //double mean_unvoiced[3] = { 0.409640767967304	11.70000325870890	0.487373951952576};
 //double mean_voiced[3] = {0.958387666717486	4.74894514767933	0.198286016529145};
-double mean_unvoiced[3] = {0.21,	15.70,	0.20};
-double mean_voiced[3] = {0.66,	4.75,  0.49};
+double mean_unvoiced[3] = {4.2015,	0.2140,	0.1420};
+double mean_voiced[3] = {6.6899,	0.5104,  0.2762};
 
 
-double inv_cov_unvoiced[3][3] = {{46.3543,  -0.0561,  -14.4209},{-0.0561,  0.0164,  -0.4166},{-14.4209,  -0.4166,  119.4729}};
-double inv_cov_voiced[3][3] = {{38.2671,   -0.0561,   -9.9948},{-0.0561,    0.0717,    0.0722},{-9.9948,    0.0722,   30.6466}};
+double inv_cov_unvoiced[3][3] = {{0.0222,  -0.1275,  0.0681},{-0.1275,  46.7499,  -15.8780},{0.0681,  -15.8780,  166.3416}};
+double inv_cov_voiced[3][3] = {{0.0667,   0.1172,   -0.4812},{0.1172,    50.9276,    -47.8968},{-0.4812, -47.8968,   93.3766}};
 
 
 //changed to log for viterbi
@@ -15,8 +15,8 @@ double transitionMatrix[2][2] = {  {  -0.0132,   -4.3352}, { -2.9269,   -0.0550}
 double prior[2] = {0.5,0.5};
 
 //converted to log for easy use in viterbi
-double denom_gauss_unvoiced = 0.5767; // loge(((2*pi)^(3/2))*(det(speech_cov(:,:,1))^0.5))
-double denom_gauss_voiced = 0.5865; // loge(((2*pi)^(3/2))*(det(speech_cov(:,:,2))^0.5))
+double denom_gauss_unvoiced = 0.2068; // loge(((2*pi)^(3/2))*(det(speech_cov(:,:,1))^0.5))
+double denom_gauss_voiced = 0.2303; // loge(((2*pi)^(3/2))*(det(speech_cov(:,:,2))^0.5))
 
 /*
 double mean_unvoiced[3] = { 0.2768, 11.1210, 0.1827 };

@@ -118,9 +118,12 @@ void Java_edu_cornell_audioProbe_AudioManager_features(JNIEnv* env, jobject java
 
 	// compute total energy
 	energy = computeEnergy(powerSpec, FFT_LENGTH) / FFT_LENGTH;
+	//energy = log10(energy);
 
 	// compute low-high energy ratio
 	energy_ratio = computeLowHighEnergyRatio(powerSpec, FFT_LENGTH);
+	//energy_ratio = log10(energy_ratio);
+	//energy_ratio = (energy_ratio);
 
 	// compute Spectral Entropy
 	relSpecEntr = computeSpectralEntropy2(magnitudeSpec, FFT_LENGTH);
@@ -129,12 +132,12 @@ void Java_edu_cornell_audioProbe_AudioManager_features(JNIEnv* env, jobject java
 	computeAutoCorrelationPeaks2(powerSpec, powerSpecCpx, NOISE_LEVEL, FFT_LENGTH, autoCorPeakVal, autoCorPeakLg);
 
 	//write on the feature vector
-	fVector[0] = energy_ratio;
+	fVector[0] = (float)energy_ratio;
 	fVector[1] = maxAcorrPeakVal;
 	fVector[2] = maxAcorrPeakLag;
 	fVector[3] = spectral_entropy;
 	fVector[4] = relSpecEntr;
-	fVector[5] = energy;
+	fVector[5] = (float)energy;
 
 	//gaussian distribution
 	//test the gaussian distribution with some dummy values first

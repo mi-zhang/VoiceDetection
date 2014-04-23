@@ -324,7 +324,7 @@ double computeEnergy(const kiss_fft_scalar *powerSpec2, int len) {
 //**********************************************************************************
 //
 // 	computed low-high energy ratio
-//
+//	NOTE:
 //**********************************************************************************
 double computeLowHighEnergyRatio(const kiss_fft_scalar *powerSpec2, int len) {
 
@@ -338,12 +338,13 @@ double computeLowHighEnergyRatio(const kiss_fft_scalar *powerSpec2, int len) {
 	for(i=0; i<len_bound; i++) {
 		lower_band_energy_sum += powerSpec2[i];
 	}
-	lower_band_energy_sum = lower_band_energy_sum + 0.00001;
+	lower_band_energy_sum = lower_band_energy_sum + len_bound*0.00001*pow(2,30);
 	for(i=len_bound; i<len; i++) {
 		upper_band_energy_sum += powerSpec2[i];
 	}
-	upper_band_energy_sum = upper_band_energy_sum + 0.00001;
-	low_high_energy_ratio = log10(lower_band_energy_sum / upper_band_energy_sum);
+	upper_band_energy_sum = upper_band_energy_sum +(len-len_bound)*0.00001*pow(2,30);
+	low_high_energy_ratio = lower_band_energy_sum;// / (upper_band_energy_sum + lower_band_energy_sum);
+	//LOGD();
 	return low_high_energy_ratio;
 
 }
