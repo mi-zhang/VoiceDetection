@@ -7,15 +7,11 @@ package edu.cornell.SocialDPU.UtilLibs;
  * @author shuva
  *
  */
-public class MyDataTypeConverter {
-	
+public class MyDataTypeConverter{
 	/* ========================= */
 	/* "primitive type --> byte[] data" Methods */
 	/* ========================= */
-	
-	MyDataTypeConverter() {
-		
-	}
+	MyDataTypeConverter(){}
 
 	public static byte[] toByta(byte data) {
 		return new byte[]{data};
@@ -35,8 +31,8 @@ public class MyDataTypeConverter {
 	}
 
 	public static byte[] toByta(short[] data) {
-		if (data == null) 
-			return null;
+		if (data == null) return null;
+		// ----------
 		byte[] byts = new byte[data.length * 2];
 		for (int i = 0; i < data.length; i++)
 			System.arraycopy(toByta(data[i]), 0, byts, i * 2, 2);
@@ -53,8 +49,8 @@ public class MyDataTypeConverter {
 	}
 
 	public static byte[] toByta(char[] data) {
-		if (data == null) 
-			return null;
+		if (data == null) return null;
+		// ----------
 		byte[] byts = new byte[data.length * 2];
 		for (int i = 0; i < data.length; i++)
 			System.arraycopy(toByta(data[i]), 0, byts, i * 2, 2);

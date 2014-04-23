@@ -1,22 +1,23 @@
 package edu.cornell.audioProbe;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FilenameFilter;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
+
 import org.json.JSONException;
 import org.json.JSONObject;
-import edu.cornell.SocialDPU.SocialDPUApplication;
-import edu.cornell.SocialDPU.SocialDPUStates;
-import edu.cornell.SocialDPU.ServiceControllers.AudioLib.AudioService;
-import edu.cornell.SocialDPU.Storage.ML_toolkit_object;
-import edu.cornell.SocialDPU.UtilLibs.MyDataTypeConverter;
-import edu.dartmouthcs.mltoolkit.R;
+
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -27,12 +28,18 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Handler;
 import android.util.Log;
+import edu.cornell.SocialDPU.SocialDPUApplication;
+import edu.cornell.SocialDPU.SocialDPUStates;
+import edu.cornell.SocialDPU.ServiceControllers.AudioLib.AudioService;
+import edu.cornell.SocialDPU.Storage.ML_toolkit_object;
+import edu.cornell.SocialDPU.UtilLibs.MyDataTypeConverter;
+import edu.dartmouthcs.mltoolkit.R;
 
 
 
 public class AudioManager {
-	
-	
+
+
 	/**
 	 * INITIALIZING : recorder is initializing;
 	 * READY : recorder has been initialized, recorder not yet started
@@ -42,10 +49,11 @@ public class AudioManager {
 	 */
 	public enum State {INITIALIZING, READY, RECORDING, ERROR, STOPPED};
 
-	// Log tag
+	//Log tag
 	private final String TAG = "AudioManager"; 
-		
-	// hook to Application class for global state sharing
+
+
+	//hook to Application class for global state sharing
 	private SocialDPUApplication appState;
 
 	public static final boolean RECORDING_UNCOMPRESSED = true;
@@ -87,23 +95,24 @@ public class AudioManager {
 	private int				 framePeriod;
 
 	// Buffer for output(only in uncompressed mode)
-	private short[] 		 buffer;
-	private short[]		     tempBuffer = {-68,8,22,40,94,77,119,126,80,82,61,60,80,64,79,51,4,9,-7,14,20,-9,-16,19,-28,-50,-38,-82,-135,-120,-112,-95,-105,-74,10,53,15,52,88,21,32,15,-31,13,22,32,8,12,89,88,42,22,7,-49,-115,-148,-117,22,33,65,138,133,78,60,89,92,83,67,53,8,-17,-35,-31,-35,-21,4,-2,27,-18,-97,-79,-63,-54,-26,-3,-38,-58,-34,-48,-19,29,17,-15,-3,-46,-91,-65,10,106,112,110,72,83,46,-14,13,54,117,116,77,23,-4,48,76,31,-5,8,1,-21,-47,-104,-129,-141,-110,-47,-13,4,57,-7,-40,-87,-62,-12,20,48,40,41,34,34,-7,-29,-57,-115,-100,-75,-69,-38,36,43,2,3,0,-19,-60,-92,-32,-37,-25,-7,-14,-22,-12,9,11,2,-19,25,24,-1,31,69,47,-34,-67,-101,-129,-130,-115,-51,1,29,53,42,26,9,22,33,65,138,133,78,60,89,92,83,67,53,8,-17,-35,-31,-35,-21,4,-2,27,-18,-97,-79,-63,-54,-26,-3,-38,-58,-34,-48,-19,29,17,-15,-3,-46,-91,-65,10,106,112,110,72,83,46,-14,13,54,117,116,77,23,-4,48,76,31,-5,8,1,-21,-47,-104,-129,-141,-110,-47,-13,4,57};
+	private short[] 			 buffer;
+	private short[]				 tempBuffer = {-68,8,22,40,94,77,119,126,80,82,61,60,80,64,79,51,4,9,-7,14,20,-9,-16,19,-28,-50,-38,-82,-135,-120,-112,-95,-105,-74,10,53,15,52,88,21,32,15,-31,13,22,32,8,12,89,88,42,22,7,-49,-115,-148,-117,22,33,65,138,133,78,60,89,92,83,67,53,8,-17,-35,-31,-35,-21,4,-2,27,-18,-97,-79,-63,-54,-26,-3,-38,-58,-34,-48,-19,29,17,-15,-3,-46,-91,-65,10,106,112,110,72,83,46,-14,13,54,117,116,77,23,-4,48,76,31,-5,8,1,-21,-47,-104,-129,-141,-110,-47,-13,4,57,-7,-40,-87,-62,-12,20,48,40,41,34,34,-7,-29,-57,-115,-100,-75,-69,-38,36,43,2,3,0,-19,-60,-92,-32,-37,-25,-7,-14,-22,-12,9,11,2,-19,25,24,-1,31,69,47,-34,-67,-101,-129,-130,-115,-51,1,29,53,42,26,9,22,33,65,138,133,78,60,89,92,83,67,53,8,-17,-35,-31,-35,-21,4,-2,27,-18,-97,-79,-63,-54,-26,-3,-38,-58,-34,-48,-19,29,17,-15,-3,-46,-91,-65,10,106,112,110,72,83,46,-14,13,54,117,116,77,23,-4,48,76,31,-5,8,1,-21,-47,-104,-129,-141,-110,-47,-13,4,57};
 
 
 	// Number of bytes written to file after header(only in uncompressed mode)
 	// after stop() is called, this size is written to the header/data chunk in the wave file
-	private int				payloadSize;
-	private int 			updateFlag;
-	private AudioService 	ASobj;
+	private int				 payloadSize;
+	private int 			 updateFlag;
+	private AudioService ASobj;
 
 	//audio feature options
 	private final int FRAME_SIZE = 256;
 	private int FRAME_STEP = FRAME_SIZE/2; 
 	private short[] audioFrame;	
-	
+
 	//private native double[] features(short[] audio, float[] observationProbability, byte[] inferenceResults, float[] autoCorrelationPeaks, short[] autoCorrelationPeakLags);
-	
+
+
 	//audio buffer
 	private short audioBuffer[][];
 	private int audioBufferSize = 500;
@@ -116,32 +125,52 @@ public class AudioManager {
 	private int writeCounter = 0;
 	public boolean recordingStopped;
 
-	// audio data object for passing between producing and extraction queue
+	//
+	public String current_file_name = null;
+
+	//audio data object for passing between producing and extraction queue
 	public class AudioData {
 
 		public short data[];
 		public long timestamp;
 		public int sync_id;
+		public String file_name;
 
 		public AudioData() {
 
 		}
 
-		public AudioData(short[] data, long timestamp, int sync_id) {
+		/*
+		public AudioData(short[] data, long timestamp,int sync_id) {
 			//this.data = data;
 			System.arraycopy(data, 0, audioBuffer[audioBufferNextPos], 0, FRAME_STEP);			
 			this.data = audioBuffer[audioBufferNextPos];
-			audioBufferNextPos = (audioBufferNextPos + 1) % audioBufferSize;
+			audioBufferNextPos = (audioBufferNextPos + 1)%audioBufferSize;
+
 			this.timestamp = timestamp;
 			this.sync_id = sync_id;
+		}*/
+
+
+		public AudioData(short[] data, long timestamp,int sync_id,String file_name) {
+			//this.data = data;
+			System.arraycopy(data, 0, audioBuffer[audioBufferNextPos], 0, FRAME_STEP);			
+			this.data = audioBuffer[audioBufferNextPos];
+			audioBufferNextPos = (audioBufferNextPos + 1)%audioBufferSize;
+
+			this.timestamp = timestamp;
+			this.sync_id = sync_id;
+			this.file_name = file_name;
 		}
+
 	}
-	
+
+
+	//circular buffer
+	private CircularBufferFeatExtractionInference<AudioData> cirBuffer; 
 	private AudioData audioFromQueueData = new AudioData();
-	
-	// circular buffer
-	private CircularBufferFeatExtractionInference<AudioData> cirBuffer; 	
 	private long tempTimestamp = 0;
+
 
 	///////////////////////////////////////////////////////////////
 	////////////   Conversation detection codes:start /////////////
@@ -174,25 +203,23 @@ public class AudioManager {
 	////////////   Conversation detection codes:end  /////////////
 	//////////////////////////////////////////////////////////////
 
-	///////////////////////////////////////////////////////////////
-	////////////   Native Function Declaration  /////////////
-	//////////////////////////////////////////////////////////////
+	//native functions for audio processing
 	private native int energy(short[] array);
 	//private native double[] features(short[] array,float[] features);
 	//private native double[] features(short[] audio, float[] voicingFeatures, float[] observationProbability, byte[] inferenceResults, int[] numbeOfPeaks, float[] autoCorrelationPeaks, short[] autoCorrelationPeakLags);
 	private native void features(short[] audio, float[] voicingFeatures, float[] observationProbability, byte[] inferenceResults, int[] numbeOfPeaks, float[] autoCorrelationPeaks, short[] autoCorrelationPeakLags);
 	private native void audioFeatureExtractionInit();
 	private native void audioFeatureExtractionDestroy();
-	
-	// Important !!!
-	// NOTE: Pay attention to the Primitive Data Types
-	private float[] voicingFeatures = new float[6]; // 6 audio features 
-	private byte[] inferanceResults =  new byte[20]; // ??? why 20 bytes?
-	private float[] observationProbability =  new float[2]; // 2 probabilities for voiced and unvoiced respectively 
-	private float[] autoCorrelationPeaks = new float[128]; // autocorrelation peak values
-	private short[] autoCorrelationPeakLags = new short[128]; // autocorrelation peak lags
-	private int[] numberOfPeaks = new int[1]; // ??? why redundant?
-	
+
+
+
+	private float[] voicingFeatures=new float[6];
+	private byte[] inferanceResults =  new byte[20];
+	private float[] observationProbability =  new float[2];
+	private float[] autoCorrelationPeaks = new float[128]; 
+	private short[] autoCorrelationPeakLags = new short[128];
+	private int[] numberOfPeaks = new int[1];
+
 	//send notification
 	Notification notification;
 	NotificationManager mNotificationManager;
@@ -213,11 +240,12 @@ public class AudioManager {
 	 * 
 	 * @return recorder state
 	 */
-	public State getState() {
-		
+	public State getState()
+	{
 		return state;
-		
 	}
+
+
 
 
 	/**
@@ -247,10 +275,10 @@ public class AudioManager {
 		 * Intializes audio data variables and necessary variables for processing
 		 * @param circular buffer where audio data is getting stored
 		 */
-		public MyQueuePopper(CircularBufferFeatExtractionInference<AudioData> obj) {
-			
+		public MyQueuePopper(CircularBufferFeatExtractionInference<AudioData>  obj)
+		{
 			//initialization
-			this.obj = obj;
+			this.obj=obj;
 			audioFrame = new short[FRAME_SIZE];
 
 			//initialize the first half with zeros
@@ -267,7 +295,7 @@ public class AudioManager {
 		}
 
 		@Override
-		// start the thread
+		//start the thread
 		public void start() {
 			blinker = new Thread(this);
 			blinker.start();
@@ -277,26 +305,34 @@ public class AudioManager {
 		//code that run inside the thread
 		//fetches data from the buffer and process using native C libraries
 		public void run() {
-			
 			// TODO Auto-generated method stub
 			double[] tempFeatures;
 			Thread thisThread = Thread.currentThread();
-			while (blinker == thisThread) {
+			while(blinker == thisThread) {
 
-				// get AudioData data structure from the Circular Buffer
 				audioFromQueueData = obj.deleteAndHandleData();
 				System.arraycopy(audioFromQueueData.data, 0, audioFrame, FRAME_STEP, FRAME_STEP);
+
+
 
 				///////////////////////////////////////////////////////////////
 				////////////   audio features is computed here   /////////////
 				//////////////////////////////////////////////////////////////
 
+
+
+				//decide for conversation
+				//a timer has been added which will check every 30 seconds to see whether 
+				//there is x% percent voice being sensed in the last minute
+
 				//this function calls the c function for audio processing
 				//extractedFeatures = features(audioFrame,features,); // problem is here we want to assign the array to a fixed place, but variable length is causing problems?
 				//private native double[] features(short[] audio, float[] observationProbability, byte[] inferenceResults, float[] autoCorrelationPeaks, short[] autoCorrelationPeakLags);
 				//extractedFeatures = 
-			    features(audioFrame, voicingFeatures, observationProbability, inferanceResults, numberOfPeaks, autoCorrelationPeaks, autoCorrelationPeakLags); 
-				
+				features(audioFrame,voicingFeatures,observationProbability,inferanceResults,numberOfPeaks,autoCorrelationPeaks,autoCorrelationPeakLags); 
+
+				//Log.e(TAG,"Features, " + Arrays.toString(voicingFeatures));
+
 				///////////////////////////////////////////////////////////////
 				////////////   Conversation detection codes:start /////////////
 				//////////////////////////////////////////////////////////////
@@ -304,9 +340,9 @@ public class AudioManager {
 				//add the new inference results. 0 = non-human-voice, 1=human-voice. 
 				leavingInference = circularQueueOfInference[indexToCircularQueueOfInference];
 				sumOfPreviousInferences = sumOfPreviousInferences - leavingInference;
-				// here we only use the first byte!!! other 19 bytes are not used
+				//currentInference = extractedFeatures[8]; // 0 = non-human-voice, 1 = human-voice
 				currentInference = inferanceResults[0]; // 0 = non-human-voice, 1 = human-voice
-				
+
 				Log.e(TAG,"============ Voice/unvoiced, " + currentInference + " ===============");
 				Log.e(TAG,"Features, " + Arrays.toString(voicingFeatures));
 				Log.e(TAG,"observationProbability, " + Arrays.toString(observationProbability));
@@ -314,7 +350,32 @@ public class AudioManager {
 				Log.e(TAG,"numberOfPeaks, " + Arrays.toString(numberOfPeaks));
 				Log.e(TAG,"autoCorrelationPeaks, " + Arrays.toString(autoCorrelationPeaks));
 				Log.e(TAG,"autoCorrelationPeakLags, " + Arrays.toString(autoCorrelationPeakLags));
-				
+
+				//string to write
+				//audio frame, voicing features, observation probabilities, inference results
+				String str = Arrays.toString(audioFrame).replace("[", "").replace("]", "") + ',';
+				str = str + Arrays.toString(voicingFeatures).replace("[", "").replace("]", "") + ',';
+				str = str + Arrays.toString(observationProbability).replace("[", "").replace("]", "") + ',';
+				str = str + Arrays.toString(inferanceResults).replace("[", "").replace("]", "") + '\n';
+
+
+
+				//file write 
+				//open write and close the file
+				Writer writer = null;
+				try {
+					writer = new BufferedWriter(new OutputStreamWriter(
+							new FileOutputStream(audioFromQueueData.file_name.substring(0,audioFromQueueData.file_name.length()-4)+"_features.txt",true), "utf-8"));
+					writer.write(str);
+				} catch (IOException ex) {
+					// report
+				} finally {
+					try {writer.close();} catch (Exception ex) {}
+				}
+
+
+
+
 				//Log.i("MiCheck", "MyQueuePopper run" + currentInference);
 
 				//set inferred_audio_Status
@@ -323,95 +384,142 @@ public class AudioManager {
 
 				sumOfPreviousInferences = sumOfPreviousInferences + currentInference;
 				circularQueueOfInference[indexToCircularQueueOfInference] = currentInference;
-				indexToCircularQueueOfInference = (indexToCircularQueueOfInference + 1) % LengthCircularQueueOfInference;
+				indexToCircularQueueOfInference = (indexToCircularQueueOfInference+1)%LengthCircularQueueOfInference;
 
 				///////////////////////////////////////////////////////////////
 				////////////   Conversation detection codes:end  /////////////
 				//////////////////////////////////////////////////////////////
-			
+
 				//AudioObject =  dpuStates.mMlToolkitObjectPool.borrowObject().setValues(tempTimestamp, 24, 
 				//		MyDataTypeConverter.toByta(extractedFeatures),audioFromQueueData.sync_id);
-				
-				
-				
+
+
+
 				//separate entry for separate values
 				/*
 				AudioObject =  dpuStates.mMlToolkitObjectPool.borrowObject().setValues(tempTimestamp, 25, 
 						MyDataTypeConverter.toByta(voicingFeatures),audioFromQueueData.sync_id);
 				dpuStates.ML_toolkit_buffer.insert(AudioObject);//inserting into the buffer
-				
+
 				AudioObject =  dpuStates.mMlToolkitObjectPool.borrowObject().setValues(tempTimestamp, 26, 
 						MyDataTypeConverter.toByta(inferanceResults),audioFromQueueData.sync_id);
 				dpuStates.ML_toolkit_buffer.insert(AudioObject);//inserting into the buffer
-				
+
 				AudioObject =  dpuStates.mMlToolkitObjectPool.borrowObject().setValues(tempTimestamp, 27, 
 						MyDataTypeConverter.toByta(observationProbability),audioFromQueueData.sync_id);
 				dpuStates.ML_toolkit_buffer.insert(AudioObject);//inserting into the buffer
-				
+
 				AudioObject =  dpuStates.mMlToolkitObjectPool.borrowObject().setValues(tempTimestamp, 28, 
 						MyDataTypeConverter.toByta(numberOfPeaks),audioFromQueueData.sync_id);
 				dpuStates.ML_toolkit_buffer.insert(AudioObject);//inserting into the buffer
-				
+
 				AudioObject =  dpuStates.mMlToolkitObjectPool.borrowObject().setValues(tempTimestamp, 29, 
 						MyDataTypeConverter.toByta(autoCorrelationPeaks),audioFromQueueData.sync_id);
 				dpuStates.ML_toolkit_buffer.insert(AudioObject);//inserting into the buffer
-				
+
 				AudioObject =  dpuStates.mMlToolkitObjectPool.borrowObject().setValues(tempTimestamp, 30, 
 						MyDataTypeConverter.toByta(autoCorrelationPeakLags),audioFromQueueData.sync_id);
 				dpuStates.ML_toolkit_buffer.insert(AudioObject);//inserting into the buffer
-				*/				
-				
-				// make a buffer with byte array with all the values
+				 */
+
+
+				//make a buffer with byte array with all the values
 				AudioObject =  dpuStates.mMlToolkitObjectPool.borrowObject().setValues(tempTimestamp, 31, 
-						MyDataTypeConverter.toByta(voicingFeatures, inferanceResults, observationProbability,
-								numberOfPeaks, autoCorrelationPeaks, autoCorrelationPeakLags), audioFromQueueData.sync_id);
+						MyDataTypeConverter.toByta(voicingFeatures,inferanceResults,observationProbability,
+								numberOfPeaks,autoCorrelationPeaks,autoCorrelationPeakLags),audioFromQueueData.sync_id);
 				dpuStates.ML_toolkit_buffer.insert(AudioObject);
-				
-				// move the processed frame_step to the first half of audioFrame
+
+				//done for overlapping window
 				System.arraycopy(audioFromQueueData.data, 0, audioFrame, 0, FRAME_STEP);
+
+
+				//file name
+
+
+
 
 			}
 
 		}
 
 	}
-	
+
 	private MyQueuePopper myQueuePopper;
 	public boolean freeCMemoryActivated;
-
+	public int count = 0;
 
 	/**
 	 * 
 	 * Method used for recording and storing data to the buffer for queue insertion
 	 * 
 	 */
-	private AudioRecord.OnRecordPositionUpdateListener updateListener = new AudioRecord.OnRecordPositionUpdateListener() {
-		
-		public void onPeriodicNotification(AudioRecord recorder) {
+	private AudioRecord.OnRecordPositionUpdateListener updateListener = new AudioRecord.OnRecordPositionUpdateListener()
+	{
+		public void onPeriodicNotification(AudioRecord recorder)
+		{
+
 
 			//////////////////////////////////////////////////////
 			///////// buffer contains the audio data /////////////
 			//////////////////////////////////////////////////////
 
-			// producer producing data!
+			// producer sproducing the data
 			aRecorder.read(buffer, 0, buffer.length); // Fill buffer with available audio
 
 			if(!recordingStopped){
 				//put data in circular buffer for processing
 				//you can do other stuffs with the data
 				tempTimestamp = System.currentTimeMillis();
-				sync_id_counter = (sync_id_counter + 1) % 16384;				
+				sync_id_counter = (sync_id_counter+1)%16384;
+
+
 
 				//input to circular buffer
-				cirBuffer.insert(new AudioData(buffer, tempTimestamp, sync_id_counter));//<-----------check why 16384
+				//cirBuffer.insert(new AudioData(buffer,tempTimestamp,sync_id_counter));//<-----------check why 16384
 				//Log.i("MiCheck", "onPeriodicNotification");
-				boolean rawAudioOn = true;
-				if(rawAudioOn == true) {
+				boolean rawAudioOn = false;
+				if(rawAudioOn == true){
 					AudioObject =  dpuStates.mMlToolkitObjectPool.borrowObject().setValues(tempTimestamp, 0, MyDataTypeConverter.toByta(buffer),sync_id_counter);
 					dpuStates.ML_toolkit_buffer.insert(AudioObject);//inserting into the buffer
 				}
-				
-				
+
+
+
+				//file read
+				try {
+					//count = 0;
+					//sCurrentLine = br.readLine();
+					int i;
+					for(i=0;i<128;i++){
+						sCurrentLine = br.readLine();
+
+						if(sCurrentLine==null) break;//end of file
+
+						buffer[i] = Short.parseShort(sCurrentLine);
+
+					}
+
+					if(i<128){//then means the file ended
+						br.close();
+						file_number++;
+						if(file_number < wav_file_names.length){//false means there is no more file
+							br = new BufferedReader(new FileReader(wav_file_names[file_number]));
+							current_file_name = wav_file_names[file_number];
+						}
+
+					} else {
+						cirBuffer.insert(new AudioData(buffer,tempTimestamp,sync_id_counter,current_file_name));//<-----------check why 16384
+					}
+
+
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+
+
+
 				payloadSize += buffer.length;
 				updateFlag++;
 				dpuStates.audio_no_of_records = payloadSize;
@@ -420,7 +528,8 @@ public class AudioManager {
 					ASobj.updateNotificationArea();
 				}
 			}
-			else{
+			
+			else {
 				//no new data will be inserted at this stage
 				//so we will activate the freeCMemory thread
 				//this will wait if there is element in the queue
@@ -466,11 +575,6 @@ public class AudioManager {
 	private Runnable mUpdateTimeTask = new Runnable() {
 		public void run() {
 
-			//decide for conversation
-			//a timer has been added which will check every 30 seconds to see whether 
-			//there is x% percent voice being sensed in the last minute
-
-			
 			//Log.i("MiCheck", "in Runnable()");
 
 			Log.e("CurrentStat",""+sumOfPreviousInferences+"," +600);//here 600 is the threshold
@@ -537,24 +641,28 @@ public class AudioManager {
 	 * In case of errors, no exception is thrown, but the state is set to ERROR
 	 * 
 	 */ 
+	public String sCurrentLine;
+	public BufferedReader br = null;
+	public String[] wav_file_names;
+	public int file_number = 0;
 	public AudioManager(SocialDPUApplication apppState,AudioService obj, boolean uncompressed, int audioSource, int sampleRate, int channelConfig,
-			int audioFormat) {
-		
-		
+			int audioFormat)
+	{
 		Log.i("MiCheck", "on constructor of audiomanager.");
 		this.ASobj = obj;
 		this.appState = apppState;
 		this.dpuStates = this.appState.dpuStates;
-				
+
+
 		//initialize features, inference, others
 		inferanceResults = new byte[20];
 		voicingFeatures = new float[6];
 		observationProbability = new float[2];
 		autoCorrelationPeaks = new float[128];
 		autoCorrelationPeakLags = new short[128];
-		
-		try {
-			
+
+		try
+		{
 			rUncompressed = uncompressed;
 			if (rUncompressed)
 			{ // RECORDING_UNCOMPRESSED
@@ -650,6 +758,39 @@ public class AudioManager {
 			cAmplitude = 0;
 			fPath = null;
 			state = State.INITIALIZING;
+
+
+
+
+			//--- start the file reader
+			//list all the files
+
+			//make the folder if it doesn't exist
+			File theDir = new File("/sdcard/voice_data/");
+
+			// if the directory does not exist, create it
+			if (!theDir.exists())
+				theDir.mkdir();  
+			
+
+
+			wav_file_names = getWavFileList("/sdcard/voice_data/", ".csv");
+			// 
+			if(wav_file_names.length > 0){
+				br = new BufferedReader(new FileReader(wav_file_names[file_number]));
+				current_file_name = wav_file_names[file_number];
+			}
+
+
+
+			/*
+			while ((sCurrentLine = br.readLine()) != null) {
+				System.out.println(sCurrentLine);
+			}
+			 */
+
+
+
 		} catch (Exception e)
 		{
 			if (e.getMessage() != null)
@@ -663,6 +804,45 @@ public class AudioManager {
 			state = State.ERROR;
 		}
 	}
+
+
+
+	//extension finding code
+	//delete broke dbr files in internal memory
+	private String[] getWavFileList(String location, String file_extension) {
+		// TODO Auto-generated method stub
+		String d = location; //"/data/data/org.att.research/databases/";
+		String e = file_extension; //".dbr";
+		ExtensionFilter filter = new ExtensionFilter(e);
+		File dir = new File(d);
+
+		String[] list = dir.list(filter);
+		File file;
+		if (list == null || list.length == 0) 
+			return null;
+
+		for (int i = 0; i < list.length; i++) 
+			list[i] = new String(d + list[i]);
+
+		return list;
+	}
+
+
+	//find file extension
+	class ExtensionFilter implements FilenameFilter {
+		private String extension;
+		public ExtensionFilter( String extension ) {
+			this.extension = extension;             
+		}
+		public boolean accept(File dir, String name) {
+			return (name.endsWith(extension));
+		}
+	}
+
+
+
+
+
 
 	/**
 	 * Sets output file path, call directly after construction/reset.
@@ -751,7 +931,7 @@ public class AudioManager {
 				{
 					if ((aRecorder.getState() == AudioRecord.STATE_INITIALIZED) & (fPath != null))
 					{
-						buffer = new short[framePeriod * bSamples / 16 * nChannels];
+						buffer = new short[framePeriod*bSamples/16*nChannels];
 						state = State.READY;
 						Log.i("MiCheck", "on prepare audio manager state is set to ready ...");
 					}

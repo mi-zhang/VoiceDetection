@@ -102,7 +102,7 @@ void viterbiDestroy()
 }
 
 
-int getViterbiInference(double *x, double *observationLikelihood, jbyte* viterbitPath) {
+int getViterbiInference(double *x,double *observationLikelihood, jbyte* viterbitPath){
 
 
 	//emissionVoiced = computeMvnPdf(x,mean_voiced, inv_cov_voiced, denom_gauss_voiced);
@@ -170,7 +170,6 @@ int getViterbiInference(double *x, double *observationLikelihood, jbyte* viterbi
 
 	observationLikelihood[0] = emissionProbabilities[0];
 	observationLikelihood[1] = emissionProbabilities[1];
-	// void * memcpy ( void * destination, const void * source, size_t num );
 	memcpy(viterbitPath, currentVteribiPath, LOOK_BACK_LENGTH*sizeof(jbyte) ); //copy inference
 
 	//memcpy( featureAndInference + 2, currentVteribiPath, LOOK_BACK_LENGTH*sizeof(double) ); //copy inference

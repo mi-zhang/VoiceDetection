@@ -20,6 +20,7 @@
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,   "JNI_DEBUGGING", __VA_ARGS__)
 
 
+
 jint sum = 0;
 char buffer [2500];
 char temp_buffer [50];
@@ -42,11 +43,10 @@ double comp[FRAME_LENGTH/2];
 //features
 double energy;
 double relSpecEntr;
-double featuresValuesTemp[264 + LOOK_BACK_LENGTH]; //(6 + 128 + 128 +  = 262) + 2 + LOOK_BACK_LENGTH
+double featuresValuesTemp[264 + LOOK_BACK_LENGTH];//(6 + 128 + 128 +  = 262) + 2 + LOOK_BACK_LENGTH
 double featureAndInference[2+LOOK_BACK_LENGTH];
 double observationLikihood[2];
 char viterbiPath[LOOK_BACK_LENGTH];
-double energy_ratio;
 
 double x[3];
 int inferenceResult;
@@ -59,12 +59,12 @@ int inferenceResult;
 //**********************************************************************************
 void Java_edu_cornell_audioProbe_AudioManager_audioFeatureExtractionInit(JNIEnv* env, jobject javaThis) {
 
+
 	//intialize feature arrays
 	initVoicedFeaturesFunction();
 
 	//initialize viterbi
 	viterbiInitialize();
-
 }
 
 //**********************************************************************************
@@ -79,7 +79,6 @@ void Java_edu_cornell_audioProbe_AudioManager_audioFeatureExtractionDestroy(JNIE
 
 	//kill viterbi
 	viterbiDestroy();
-
 }
 
 
@@ -92,7 +91,6 @@ void Java_edu_cornell_audioProbe_AudioManager_audioFeatureExtractionDestroy(JNIE
 void Java_edu_cornell_audioProbe_AudioManager_features(JNIEnv* env, jobject javaThis, jshortArray audio, jfloatArray features,
 		jfloatArray observationProbability, jbyteArray inferenceResults, jintArray numberOfPeaks, jfloatArray autoCorrelationPeaks, jshortArray autoCorrelationPeakLags) {
 
-
 	jshort* buff =  (*env)->GetShortArrayElements(env, audio, 0);
 	jfloat * fVector =  (*env)->GetFloatArrayElements(env, features, 0);
 	jfloat * obsProbVector =  (*env)->GetFloatArrayElements(env, observationProbability, 0);
@@ -101,43 +99,39 @@ void Java_edu_cornell_audioProbe_AudioManager_features(JNIEnv* env, jobject java
 	jfloat * autoCorPeakVal =  (*env)->GetFloatArrayElements(env, autoCorrelationPeaks, 0);
 	jshort* autoCorPeakLg =  (*env)->GetShortArrayElements(env, autoCorrelationPeakLags, 0);
 
-	// zero mean data
-	normalize_data(buff, normalizedData);
+	//zero mean data
+	normalize_data(buff,normalizedData);
 
-	// apply hamming window
-	computeHamming(normalizedData, dataHamming);
+	//apply hamming window smoothing
+	computeHamming(normalizedData,dataHamming);
 
-	// computeFwdFFT
+	//computeFwdFFT
 	kiss_fftr(cfgFwd, dataHamming, fftx);
 
-	// compute power spectrum
+	//compute power spectrum
 	computePowerSpec(fftx, powerSpec, FFT_LENGTH);
 
-	// compute magnitude spectrum
+	//compute magnitude spectrum
 	computeMagnitudeSpec(powerSpec, magnitudeSpec, FFT_LENGTH);
 
 	// compute total energy
-	energy = computeEnergy(powerSpec, FFT_LENGTH) / FFT_LENGTH;
-	//energy = log10(energy);
+	energy = computeEnergy(powerSpec,FFT_LENGTH) / FFT_LENGTH;
 
-	// compute low-high energy ratio
-	energy_ratio = computeLowHighEnergyRatio(powerSpec, FFT_LENGTH);
-	//energy_ratio = log10(energy_ratio);
-	//energy_ratio = (energy_ratio);
-
-	// compute Spectral Entropy
+	//compute Spectral Entropy
 	relSpecEntr = computeSpectralEntropy2(magnitudeSpec, FFT_LENGTH);
 
-	// compute auto-correlation peaks
+	//compute auto-correlation peaks
 	computeAutoCorrelationPeaks2(powerSpec, powerSpecCpx, NOISE_LEVEL, FFT_LENGTH, autoCorPeakVal, autoCorPeakLg);
 
+
 	//write on the feature vector
-	fVector[0] = (float)energy_ratio;
+	fVector[0] = numAcorrPeaks; //autocorrelation values
 	fVector[1] = maxAcorrPeakVal;
 	fVector[2] = maxAcorrPeakLag;
 	fVector[3] = spectral_entropy;
 	fVector[4] = relSpecEntr;
-	fVector[5] = (float)energy;
+	fVector[5] = energy;
+
 
 	//gaussian distribution
 	//test the gaussian distribution with some dummy values first
@@ -145,20 +139,22 @@ void Java_edu_cornell_audioProbe_AudioManager_features(JNIEnv* env, jobject java
 	x[1] = numAcorrPeaks;
 	x[2] = relSpecEntr;
 
-	inferenceResult = getViterbiInference(x, observationLikihood, inferRes);
+	inferenceResult = getViterbiInference(x,observationLikihood,inferRes);
 
 	//observation likelihood
-	obsProbVector[0] = (float)observationLikihood[0]; // unvoiced
-	obsProbVector[1] = (float)observationLikihood[1]; // voiced
+	obsProbVector[0] = (float)observationLikihood[0];
+	obsProbVector[1] = (float)observationLikihood[1];
 
 	//infer results are already assigned during getViterbiInference call
 
+
+	//
 	numOfPeaks[0] = numAcorrPeaks;
 
 	(*env)->ReleaseShortArrayElements(env, audio, buff, JNI_ABORT);
-	(*env)->ReleaseFloatArrayElements(env, features, fVector, 0);
+	(*env)->ReleaseFloatArrayElements(env,features, fVector, 0);
 	(*env)->ReleaseFloatArrayElements(env, observationProbability, obsProbVector, 0);
-	(*env)->ReleaseByteArrayElements(env, inferenceResults, inferRes, 0);
+	(*env)->ReleaseByteArrayElements(env,inferenceResults, inferRes, 0);
 	(*env)->ReleaseFloatArrayElements(env, autoCorrelationPeaks, autoCorPeakVal, 0);
 	(*env)->ReleaseShortArrayElements(env, autoCorrelationPeakLags, autoCorPeakLg, 0);
 	(*env)->ReleaseIntArrayElements(env, numberOfPeaks, numOfPeaks, 0);
