@@ -1,5 +1,40 @@
 //list of voicing parameters
 
+/* NOTE: This model is especially optimized for speech (both indoor and outdoor) */
+double mean_unvoiced[3] = {0.2209, 13.6444, 0.1716};
+double mean_voiced[3] = {0.5157, 6.6938,  0.3138};
+
+double inv_cov_unvoiced[3][3] = {{55.9649, 0.0178, -18.739}, {0.0178, 0.0061, -0.0217}, {-18.739, -0.0217, 58.6004}};
+double inv_cov_voiced[3][3] = {{45.996, 0.3466, -33.7135}, {0.3466, 0.0414, -0.5743}, {-33.7135, -0.5743, 64.4322}};
+
+//changed to log for viterbi
+double transitionMatrix[2][2] = {{-0.0258, -3.6689}, {-2.8408, -0.0602} }; //loge(transitionProb)
+double prior[2] = {0.5, 0.5};
+
+//converted to log for easy use in viterbi
+double denom_gauss_unvoiced = 1.3149; // loge(((2*pi)^(3/2))*(det(speech_cov(:,:,1))^0.5))
+double denom_gauss_voiced = 0.6604; // loge(((2*pi)^(3/2))*(det(speech_cov(:,:,2))^0.5))
+
+
+/*
+double mean_unvoiced[3] = {0.2140, 4.2015, 0.1420};
+double mean_voiced[3] = {0.5104, 6.6899,  0.2762};
+
+double inv_cov_unvoiced[3][3] = {{46.7499, -0.1275, -15.8780}, {-0.1275, 0.0222, 0.0681}, {-15.8780, 0.0681, 166.3416}};
+double inv_cov_voiced[3][3] = {{50.9276, 0.1172, -47.8968}, {0.1172, 0.0667, -0.4812}, {-47.8968, -0.4812, 93.3766}};
+
+//changed to log for viterbi
+double transitionMatrix[2][2] = {  {  -0.0132,   -4.3352}, { -2.9269,   -0.0550} };//loge(transitionProb)
+double prior[2] = {0.5,0.5};
+
+//converted to log for easy use in viterbi
+//double denom_gauss_unvoiced = 0.2; // loge(((2*pi)^(3/2))*(det(speech_cov(:,:,1))^0.5))
+//double denom_gauss_voiced = 0.23; // loge(((2*pi)^(3/2))*(det(speech_cov(:,:,2))^0.5))
+//double denom_gauss_unvoiced = 0.5767; // loge(((2*pi)^(3/2))*(det(speech_cov(:,:,1))^0.5))
+//double denom_gauss_voiced = 0.5865; // loge(((2*pi)^(3/2))*(det(speech_cov(:,:,2))^0.5))
+*/
+
+/*
 //double mean_unvoiced[3] = { 0.409640767967304	11.70000325870890	0.487373951952576};
 //double mean_voiced[3] = {0.958387666717486	4.74894514767933	0.198286016529145};
 double mean_unvoiced[3] = {0.21,	15.70,	0.20};
@@ -17,6 +52,7 @@ double prior[2] = {0.5,0.5};
 //converted to log for easy use in viterbi
 double denom_gauss_unvoiced = 0.5767; // loge(((2*pi)^(3/2))*(det(speech_cov(:,:,1))^0.5))
 double denom_gauss_voiced = 0.5865; // loge(((2*pi)^(3/2))*(det(speech_cov(:,:,2))^0.5))
+*/
 
 /*
 double mean_unvoiced[3] = { 0.2768, 11.1210, 0.1827 };
