@@ -1,6 +1,22 @@
 //list of voicing parameters
 
-/* NOTE: This model is especially optimized for speech (both indoor and outdoor) */
+/* NOTE: This model is especially optimized for ambient noise */
+double mean_unvoiced[3] = {0.2404, 6.2834, 0.1396};
+double mean_voiced[3] = {0.5104, 6.6899,  0.2762};
+
+double inv_cov_unvoiced[3][3] = {{51.0232, 0.0021, -22.38}, {0.0021, 0.0127, 0.1544}, {-22.38, 0.1544, 148.9967}};
+double inv_cov_voiced[3][3] = {{50.9276, 0.1172, -47.8968}, {0.1172, 0.0667, -0.4812}, {-47.8968, -0.4812, 93.3766}};
+
+//changed to log for viterbi
+double transitionMatrix[2][2] = {{-0.0258, -3.6689}, {-2.8408, -0.0602} }; //loge(transitionProb)
+double prior[2] = {0.5, 0.5};
+
+//converted to log for easy use in viterbi
+double denom_gauss_unvoiced = 0.5133; // loge(((2*pi)^(3/2))*(det(speech_cov(:,:,1))^0.5))
+double denom_gauss_voiced = 0.2303; // loge(((2*pi)^(3/2))*(det(speech_cov(:,:,2))^0.5))
+
+
+/* NOTE: This model is especially optimized for speech (both indoor and outdoor)
 double mean_unvoiced[3] = {0.2209, 13.6444, 0.1716};
 double mean_voiced[3] = {0.5157, 6.6938,  0.3138};
 
@@ -14,7 +30,7 @@ double prior[2] = {0.5, 0.5};
 //converted to log for easy use in viterbi
 double denom_gauss_unvoiced = 1.3149; // loge(((2*pi)^(3/2))*(det(speech_cov(:,:,1))^0.5))
 double denom_gauss_voiced = 0.6604; // loge(((2*pi)^(3/2))*(det(speech_cov(:,:,2))^0.5))
-
+*/
 
 /*
 double mean_unvoiced[3] = {0.2140, 4.2015, 0.1420};

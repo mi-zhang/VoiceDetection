@@ -17,12 +17,9 @@ public class CircularBufferFeatExtractionInference<T> {
 	private T[] q;    // actual queue
 	//private static Ml_Toolkit_Application appState;
 	private T[] tempQ;
-
 	//thread to write in the database
 	private Thread t; 
-
 	private static final String TAG = "XYY_QUEUE";	
-
 
 	@SuppressWarnings("unchecked")
 	/**
@@ -38,9 +35,7 @@ public class CircularBufferFeatExtractionInference<T> {
 		q = (T[]) new Object[qMaxSize];
 		tempQ = (T[]) new Object[1] ;
 	}
-
-	
-	
+		
 	/**
 	 * pop an element for the buffer
 	 * @return
@@ -56,7 +51,6 @@ public class CircularBufferFeatExtractionInference<T> {
 			return null;
 		}
 	}
-
 	
 	/**
 	 * push an element from the buffer
@@ -81,15 +75,10 @@ public class CircularBufferFeatExtractionInference<T> {
 			q[rp] = c;
 			
 			//Calling feature extaction or inference thread 
-			notify(); 
-
-			
-		}
-		
-		
+			notify(); 			
+		}				
 		else
 			Log.d(TAG, "Frame dropped for a full buffer" );
-
 	}
 	
 
@@ -99,15 +88,13 @@ public class CircularBufferFeatExtractionInference<T> {
 	 */
 	public synchronized T deleteAndHandleData() {
 		
-		if(emptyq())
-		{
+		if(emptyq()) {
 			try {
 				notifyAll(); // this is needed to activate freeCMemory thread 
 				wait();
 			} catch(InterruptedException e) {				
 			}
-		}
-		
+		}		
 		return delete();
 	}
 	
@@ -116,18 +103,15 @@ public class CircularBufferFeatExtractionInference<T> {
 	/**
 	 * Can't understand why I wrote this code ???
 	 */
-	public synchronized void freeCMemory()
-	{
+	public synchronized void freeCMemory() {
 		Log.e("Going for stop", "free C memory" );
-		if(!emptyq())
-		{
+		if(!emptyq()){
 			try {
 				Log.e("Going for stop", "Not empty yet free C memory" );
 				wait(); // wait because there is more data to process. We will wait until it becomes empty
 			} catch(InterruptedException e) {
 			}
-		}
-			
+		}		
 	}
 
 	/**
@@ -152,10 +136,7 @@ public class CircularBufferFeatExtractionInference<T> {
 	 */	
 	public int getQSize() {
 		return qs;
-	}
-
-
-
-	
-
+	}	
 }
+
+

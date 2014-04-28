@@ -21,13 +21,11 @@ public class ServiceController {
 	// application context (used as a holder for global variables accessible to all activities and services)
 	private final SocialDPUApplication applicationCONTEXT;
 		
-	public ServiceController() {
-		
+	public ServiceController() {		
 		applicationCONTEXT = null;
 	}
 	
-	public ServiceController(Context con) {
-		
+	public ServiceController(Context con) {		
 		applicationCONTEXT = (SocialDPUApplication)con;
 	}
 
@@ -41,7 +39,6 @@ public class ServiceController {
 		intent.setClass(this.applicationCONTEXT, AudioService.class);
 		this.applicationCONTEXT.startService(intent);
 		this.applicationCONTEXT.dpuStates.audioSensorOn = true;
-		//Log.i("MiCheck", "startAudioSensor() ...");
 	}
 	
 	
@@ -66,8 +63,8 @@ public class ServiceController {
 		Intent intent = new Intent(this.applicationCONTEXT,SDCardStorageService.class);
 		intent.putExtra("dbpath", db_path);
 		this.applicationCONTEXT.startService(intent);
-	}
-	
-
+	}	
 	
 }
+
+

@@ -73,11 +73,8 @@ public class main_activity extends Activity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		//
 		appState = (SocialDPUApplication2)getApplicationContext();
-		//
 		serviceController = appState.dpuStates.getServiceController();
-
 		Log.i(TAG, "onCreate ...");
 		setContentView(R.layout.main);
 
@@ -135,7 +132,6 @@ public class main_activity extends Activity {
 	 */
 	public void onResume() {
 		super.onResume();
-
 		//start a timer to update the gui
 		audioTimer = new Timer();
 		audioTimer.schedule(new TimerTask() {
@@ -143,7 +139,6 @@ public class main_activity extends Activity {
 			public void run() {
 				audioTimerMethod();
 			}
-
 		}, 0, 250);
 
 		//bindings are online so start reading the values again
@@ -156,7 +151,6 @@ public class main_activity extends Activity {
 	 */
 	public void onPause() {
 		super.onPause();	
-
 		//so stop showing results, so stop the audio timer to update
 		audioTimer.cancel();
 		this.activity_paused = true;
@@ -164,27 +158,22 @@ public class main_activity extends Activity {
 	}
 
 	@Override
-	public void onStop() {
-		
+	public void onStop() {		
 		super.onStop();		
 		Log.i(TAG, "onStop ...");
 	}
 
 	@Override
-	public void onDestroy() {
-		
+	public void onDestroy() {		
 		super.onDestroy();
 		Log.i(TAG, "onDestroy ...");
 	}
 
 	@Override
-	public void onRestart() {
-		
+	public void onRestart() {		
 		super.onDestroy();
 		Log.i(TAG, "onRestart ...");
 	}
-
-
 	
 	// =============================================================================================
 	
@@ -192,11 +181,8 @@ public class main_activity extends Activity {
 		
 		// Called when the user clicks the startnStopSensingButton.
 		startnStopSensingButton.setOnClickListener(new OnClickListener() {
-
 			@Override
-			public void onClick(View v) {	
-				
-				
+			public void onClick(View v) {								
 				// main activity will never start the sensing servcices twice
 				if(appState.dpuStates.applicatin_starated == false) {
 
@@ -206,41 +192,30 @@ public class main_activity extends Activity {
 					//For exampple, there will can be two MyPhoneStateListener trying to stop the audio sensor together and there
 					// is a race condition.
 					
-					appState.dpuStates.applicatin_starated = true;			
-					
-					// Start the audio service
-					if(appState.dpuStates.savedAudioSensorOn == true) {
-						
+					appState.dpuStates.applicatin_starated = true;								
+					// Start the audio service !!!
+					if(appState.dpuStates.savedAudioSensorOn == true) {						
 						serviceController.startAudioSensor();
 						//Toast.makeText(this, "Audio service is started.", Toast.LENGTH_SHORT).show(); 
-					}
-					
+					}					
 					//activity on or off
-					activity_paused = false;
-					
+					activity_paused = false;					
 					// Update UI
-					startnStopSensingButton.setText("Stop Sensing");
-					
-
+					startnStopSensingButton.setText("Stop Sensing");					
 				} else {
 					
 					appState.dpuStates.applicatin_starated = false;			
 					
-					// Start the audio service
-					if(appState.dpuStates.savedAudioSensorOn == true) {
-						
+					// Stop the audio service
+					if(appState.dpuStates.savedAudioSensorOn == true) {						
 						serviceController.stopAudioSensor();
 						//Toast.makeText(this, "Audio service is started.", Toast.LENGTH_SHORT).show(); 
-					}
-					
+					}					
 					//activity on or off
-					activity_paused = true;
-					
+					activity_paused = true;					
 					// Update UI
-					startnStopSensingButton.setText("Start Sensing");
-					
+					startnStopSensingButton.setText("Start Sensing");					
 				}
-
 			}
 		});
 		
@@ -340,25 +315,20 @@ public class main_activity extends Activity {
 	}
 
 	private Runnable audioTimer_Tick = new Runnable() {
-		public void run() {
-			
+		public void run() {			
 			//if audio sensor is turned off
-			if (appState.dpuStates.audioSensorOn == false || activity_paused == true){
+			if (appState.dpuStates.audioSensorOn == false || activity_paused == true) {
 				setAudioImage("Not Available");
-				//Log.i("MiCheck", "Not Available in runnable ...");
 			}
 			//audio sensor is running. We need to show the inference results
 			else {
 				if(appState.voice_infernce_status == 1) {
 					setAudioImage("Voiced");
-					//Log.i("MiCheck", "Voiced ...");
 				}
 				else if(appState.voice_infernce_status==0) {
 					setAudioImage("Unvoiced");
-					//Log.i("MiCheck", "Unvoiced ...");
 				}
-			}
-			
+			}			
 			//set the conversation icon
 			/*
 			if(appState.conversation_infernce_status == 0){
@@ -371,19 +341,13 @@ public class main_activity extends Activity {
 				conversationTextView.setText("In conversation");
 				//Log.i("MiCheck", "In conversation ...");
 			}
-			*/
-				
-		}
-		
-		
+			*/			
+		}				
 	};
 	
-	protected void setAudioImage(String inferred_status) {
-		
-		// TODO Auto-generated method stub
-		if(!this.prev_audio_status.equals(inferred_status)){
+	protected void setAudioImage(String inferred_status) {		
+		if(!this.prev_audio_status.equals(inferred_status)) {
 			prev_audio_status = inferred_status;
-
 			if(inferred_status.equals("Not Available")){
 				this.audioImageView.setImageResource(R.drawable.cross);
 				this.audioTextView.setText("Not Available");
@@ -393,11 +357,9 @@ public class main_activity extends Activity {
 				this.audioTextView.setText("Voiced");
 			}
 			else if(inferred_status.equals("Unvoiced")){
-				//Log.e(main_activity.class.getName(),""+audioImageView);
 				this.audioImageView.setImageResource(R.drawable.noise_001);
 				this.audioTextView.setText("Unvoiced");
 			}
-
 		}
 	}
 

@@ -123,12 +123,12 @@ public class AudioManager {
 		public long timestamp;
 		public int sync_id;
 
-		public AudioData() {
-
-		}
+		public AudioData() {}
 
 		public AudioData(short[] data, long timestamp, int sync_id) {
 			//this.data = data;
+			// why do we need this audioBuffer ???
+			// why don't we use this.data = data; ???
 			System.arraycopy(data, 0, audioBuffer[audioBufferNextPos], 0, FRAME_STEP);			
 			this.data = audioBuffer[audioBufferNextPos];
 			audioBufferNextPos = (audioBufferNextPos + 1) % audioBufferSize;
@@ -213,10 +213,8 @@ public class AudioManager {
 	 * 
 	 * @return recorder state
 	 */
-	public State getState() {
-		
-		return state;
-		
+	public State getState() {		
+		return state;		
 	}
 
 
@@ -252,13 +250,11 @@ public class AudioManager {
 			//initialization
 			this.obj = obj;
 			audioFrame = new short[FRAME_SIZE];
-
 			//initialize the first half with zeros
 			//this is needed since we will be doing a 
 			//moving window during feature calculation
 			for(int i=0; i < FRAME_STEP; i++)
 				audioFrame[i] = 0;		
-
 		}
 
 		//stop the thread
@@ -274,8 +270,8 @@ public class AudioManager {
 		}
 
 		@Override
-		//code that run inside the thread
-		//fetches data from the buffer and process using native C libraries
+		// code that run inside the thread
+		// fetches data from the buffer and process using native C libraries
 		public void run() {
 			
 			// TODO Auto-generated method stub
@@ -361,7 +357,7 @@ public class AudioManager {
 				dpuStates.ML_toolkit_buffer.insert(AudioObject);//inserting into the buffer
 				*/				
 				
-				// make a buffer with byte array with all the values
+				// put the features and inference results into dbr !!! 31 is the ID number for feature_inference 
 				AudioObject =  dpuStates.mMlToolkitObjectPool.borrowObject().setValues(tempTimestamp, 31, 
 						MyDataTypeConverter.toByta(voicingFeatures, inferanceResults, observationProbability,
 								numberOfPeaks, autoCorrelationPeaks, autoCorrelationPeakLags), audioFromQueueData.sync_id);
@@ -390,37 +386,31 @@ public class AudioManager {
 		public void onPeriodicNotification(AudioRecord recorder) {
 
 			//////////////////////////////////////////////////////
-			///////// buffer contains the audio data /////////////
+			///////// buffer contains raw audio data /////////////
 			//////////////////////////////////////////////////////
 
-			// producer producing data!
-			aRecorder.read(buffer, 0, buffer.length); // Fill buffer with available audio
-
-			if(!recordingStopped){
-				//put data in circular buffer for processing
-				//you can do other stuffs with the data
+			// producer producing data !!!
+			aRecorder.read(buffer, 0, buffer.length); // buffer.length  = 128 (128 shorts). see public void prepare()
+			if(!recordingStopped) {
 				tempTimestamp = System.currentTimeMillis();
-				sync_id_counter = (sync_id_counter + 1) % 16384;				
-
-				//input to circular buffer
-				cirBuffer.insert(new AudioData(buffer, tempTimestamp, sync_id_counter));//<-----------check why 16384
-				//Log.i("MiCheck", "onPeriodicNotification");
+				sync_id_counter = (sync_id_counter + 1) % 16384; // why 16384 ???			
+				// input to circular buffer
+				cirBuffer.insert(new AudioData(buffer, tempTimestamp, sync_id_counter));
+				// put raw audio data into dbr !!! 0 is the ID number for raw audio data 
 				boolean rawAudioOn = true;
 				if(rawAudioOn == true) {
-					AudioObject =  dpuStates.mMlToolkitObjectPool.borrowObject().setValues(tempTimestamp, 0, MyDataTypeConverter.toByta(buffer),sync_id_counter);
-					dpuStates.ML_toolkit_buffer.insert(AudioObject);//inserting into the buffer
-				}
-				
-				
+					AudioObject =  dpuStates.mMlToolkitObjectPool.borrowObject().setValues(tempTimestamp, 0, MyDataTypeConverter.toByta(buffer), sync_id_counter);
+					dpuStates.ML_toolkit_buffer.insert(AudioObject); 
+				}								
 				payloadSize += buffer.length;
 				updateFlag++;
 				dpuStates.audio_no_of_records = payloadSize;
-				if (updateFlag%3750 == 0){//update the notification area, every one minute, 62.5 = 1000/16 frames per second; 62.5*60 = 3750 
+				if (updateFlag%3750 == 0) { //update the notification area, every one minute, 62.5 = 1000/16 frames per second; 62.5*60 = 3750 
 					ASobj.no_of_records = payloadSize;
 					ASobj.updateNotificationArea();
 				}
 			}
-			else{
+			else {
 				//no new data will be inserted at this stage
 				//so we will activate the freeCMemory thread
 				//this will wait if there is element in the queue
@@ -445,11 +435,9 @@ public class AudioManager {
 					Log.e(AudioManager.class.getName(),"audio input is stopping");
 				}
 			}
-
 		}
 
-		public void onMarkerReached(AudioRecord recorder)
-		{
+		public void onMarkerReached(AudioRecord recorder) {
 			// NOT USED
 		}
 	};
@@ -469,8 +457,6 @@ public class AudioManager {
 			//decide for conversation
 			//a timer has been added which will check every 30 seconds to see whether 
 			//there is x% percent voice being sensed in the last minute
-
-			
 			//Log.i("MiCheck", "in Runnable()");
 
 			Log.e("CurrentStat",""+sumOfPreviousInferences+"," +600);//here 600 is the threshold
@@ -516,8 +502,6 @@ public class AudioManager {
 				}
 
 			}
-
-
 			//make sure we call this handler again afterwards to continue checking
 			mHandler.removeCallbacks(mUpdateTimeTask);
 			mHandler.postDelayed(mUpdateTimeTask, rateNotification);
@@ -546,45 +530,39 @@ public class AudioManager {
 		this.appState = apppState;
 		this.dpuStates = this.appState.dpuStates;
 				
-		//initialize features, inference, others
+		// NOTICE !!!
+		// Initialize values to be saved in dbr: features, inference probabilities and results, and autoCorrelations
 		inferanceResults = new byte[20];
 		voicingFeatures = new float[6];
 		observationProbability = new float[2];
 		autoCorrelationPeaks = new float[128];
 		autoCorrelationPeakLags = new short[128];
 		
-		try {
-			
+		try {			
 			rUncompressed = uncompressed;
-			if (rUncompressed)
-			{ // RECORDING_UNCOMPRESSED
+			if (rUncompressed) { // RECORDING_UNCOMPRESSED
 
-				if (audioFormat == AudioFormat.ENCODING_PCM_16BIT)
-				{
+				if (audioFormat == AudioFormat.ENCODING_PCM_16BIT) {
 					bSamples = 16;
 				}
-				else
-				{
+				else {
 					bSamples = 8;
 				}
 
-				if (channelConfig == AudioFormat.CHANNEL_CONFIGURATION_MONO)
-				{
+				if (channelConfig == AudioFormat.CHANNEL_CONFIGURATION_MONO) {
 					nChannels = 1;
 				}
-				else
-				{
+				else {
 					nChannels = 2;
 				}
-
 				aSource = audioSource;
 				sRate   = sampleRate;
 				aFormat = audioFormat;
 
 				framePeriod = this.FRAME_STEP;
 				bufferSize = framePeriod * 100 * bSamples * nChannels / 8;
-				if (bufferSize < AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat))
-				{ // Check to make sure buffer size is not smaller than the smallest allowed one 
+				if (bufferSize < AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat)) { 
+					// Check to make sure buffer size is not smaller than the smallest allowed one 
 					bufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat);
 					// Set frame period and timer interval accordingly
 					framePeriod = bufferSize / ( 2 * bSamples * nChannels / 8 );
@@ -600,15 +578,15 @@ public class AudioManager {
 				aRecorder.setPositionNotificationPeriod(framePeriod);
 				this.updateFlag = 0;
 
-				//add a new buffer for putting audio-stuff
+				// add a new buffer for putting audio-stuff
 				cirBuffer = new CircularBufferFeatExtractionInference<AudioManager.AudioData>(null, 200);
 
-				//array puller
+				// array puller
 				audioBuffer = new short[audioBufferSize][FRAME_STEP];
 
 				// myQueuePopper is the consumer in the producer-consumer model.
-				//start a new thread for reading audio stuff
 				myQueuePopper = new MyQueuePopper(cirBuffer);
+				// start a new separate thread for processing the raw audio data				
 				myQueuePopper.start();
 
 				//write file init <--------------- Rifat commented these two lines
@@ -620,15 +598,12 @@ public class AudioManager {
 
 
 				inCoversation = false;				
-
 				//if conversationIntentSent==false and if non-conversation is found then we will send intent. 
 				//If conversationIntentSent==true then if non-conversation is found then we will not send intent. 
 				conversationIntentSent = true;  
-
 				// timer for conversation decision
 				mHandler.removeCallbacks(mUpdateTimeTask);
 				mHandler.postDelayed(mUpdateTimeTask, rateNotification);
-
 				// initiate notification
 				String ns = Context.NOTIFICATION_SERVICE;
 				mNotificationManager = (NotificationManager) this.ASobj.getSystemService(ns);
@@ -636,11 +611,7 @@ public class AudioManager {
 				CharSequence tickerText = "Conversation Survey";
 				long when = System.currentTimeMillis();
 				notification = new Notification(icon, tickerText, when);
-
-
-
-			} else
-			{ // RECORDING_COMPRESSED
+			} else { // RECORDING_COMPRESSED
 				//not used	
 				mRecorder = new MediaRecorder();
 				mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
@@ -650,14 +621,11 @@ public class AudioManager {
 			cAmplitude = 0;
 			fPath = null;
 			state = State.INITIALIZING;
-		} catch (Exception e)
-		{
-			if (e.getMessage() != null)
-			{
+		} catch (Exception e) {
+			if (e.getMessage() != null){
 				Log.e(AudioManager.class.getName(), e.getMessage());
 			}
-			else
-			{
+			else{
 				Log.e(AudioManager.class.getName(), "Unknown error occured while initializing recording");
 			}
 			state = State.ERROR;
@@ -670,8 +638,7 @@ public class AudioManager {
 	 * @param output file path
 	 * 
 	 */
-	public void setOutputFile(String argPath)
-	{
+	public void setOutputFile(String argPath) {
 		try
 		{
 			if (state == State.INITIALIZING)
@@ -741,41 +708,32 @@ public class AudioManager {
 	 * In case of an exception, the state is changed to ERROR
 	 * 	 
 	 */
-	public void prepare()
-	{
-		try
-		{
-			if (state == State.INITIALIZING)
-			{
-				if (rUncompressed)
-				{
-					if ((aRecorder.getState() == AudioRecord.STATE_INITIALIZED) & (fPath != null))
-					{
-						buffer = new short[framePeriod * bSamples / 16 * nChannels];
+	public void prepare() {
+		try {
+			if (state == State.INITIALIZING) {
+				if (rUncompressed) {
+					if ((aRecorder.getState() == AudioRecord.STATE_INITIALIZED) & (fPath != null)) {
+						buffer = new short[framePeriod * bSamples / 16 * nChannels]; // size of buffer is 128
 						state = State.READY;
 						Log.i("MiCheck", "on prepare audio manager state is set to ready ...");
 					}
-					else
-					{
+					else {
 						Log.e(AudioManager.class.getName(), "prepare() method called on uninitialized recorder");
 						state = State.ERROR;
 					}
 				}
-				else
-				{
+				else {
 					mRecorder.prepare();
 					state = State.READY;
 				}
 			}
-			else
-			{
+			else {
 				Log.e(AudioManager.class.getName(), "prepare() method called on illegal state");
 				release();
 				state = State.ERROR;
 			}
 		}
-		catch(Exception e)
-		{
+		catch(Exception e) {
 			if (e.getMessage() != null)
 			{
 				Log.e(AudioManager.class.getName(), e.getMessage());
@@ -880,30 +838,26 @@ public class AudioManager {
 	 * Call after prepare().
 	 * 
 	 */
-	public void start()
-	{
+	public void start() {
 		Log.i("MiCheck", "on start audio manager ...");
-		if (state == State.READY)
-		{
-			if (rUncompressed)
-			{
+		if (state == State.READY) {
+			if (rUncompressed) {
 				payloadSize = 0;
 				audioFeatureExtractionInit();
+				// start recording the raw audio data !!!
 				aRecorder.startRecording();
 				aRecorder.read(buffer, 0, buffer.length);
 				recordingStopped = false;
 				freeCMemoryActivated = false;
 				Log.i("MiCheck", "on start audio manager rUncompressed ...");
 			}
-			else
-			{
+			else {
 				mRecorder.start();
 				Log.i("MiCheck", "on start audio manager compressed ...");
 			}
 			state = State.RECORDING;
 		}
-		else
-		{
+		else {
 			Log.i("MiCheck", "on start audio manager not ready ...");
 			Log.e(AudioManager.class.getName(), "start() called on illegal state");
 			state = State.ERROR;
@@ -918,10 +872,8 @@ public class AudioManager {
 	 * Also finalizes the wave file in case of uncompressed recording.
 	 * 
 	 */
-	public void stop()
-	{
-		if (state == State.RECORDING)
-		{
+	public void stop() {
+		if (state == State.RECORDING) {
 			if (rUncompressed)
 			{
 				aRecorder.stop();
@@ -932,8 +884,7 @@ public class AudioManager {
 			}
 			state = State.STOPPED;
 		}
-		else
-		{
+		else {
 			Log.e(AudioManager.class.getName(), "stop() called on illegal state");
 			state = State.ERROR;
 		}
@@ -944,42 +895,33 @@ public class AudioManager {
 	 * Converts a byte[2] to a short, in LITTLE_ENDIAN format
 	 * 
 	 */
-	private short getShort(byte argB1, byte argB2)
-	{
+	private short getShort(byte argB1, byte argB2) {
 		return (short)(argB1 | (argB2 << 8));
 	}
-
-
-
 
 	/**
 	 * 
 	 * A vibrate notification is sent when a conversation is detected
 	 * 
 	 */
-	private void vibrateNotification()
-	{
+	private void vibrateNotification() {
+		
 		NotificationManager nManager = (NotificationManager) this.ASobj.getSystemService(this.ASobj.NOTIFICATION_SERVICE); 
 		Notification n = new Notification();
-
 		// Now we set the vibrate member variable of our Notification
 		// After a 100ms delay, vibrate for 200ms then pause for another
 		//100ms and then vibrate for 500ms
 		n.vibrate = new long[]{ 0, 300, 200, 300, 400, 300 , 600, 300};
-
 		n.ledOnMS  = 200;    //Set led blink (Off in ms)
 		n.ledOffMS = 200;    //Set led blink (Off in ms)
 		n.ledARGB = 0x9400d4;   //Set led color
 		n.flags = Notification.FLAG_SHOW_LIGHTS;
-
 		n.defaults = Notification.DEFAULT_SOUND;
-
 		nManager.notify(0, n);
 	}
 
-
 	private static final int HELLO_ID = 1;
-	public void updateNotificationArea(){
+	public void updateNotificationArea() {
 
 		String text = "Time: ";
 		Intent notificationIntent = new Intent();
@@ -987,15 +929,11 @@ public class AudioManager {
 		notificationIntent.putExtra("ConversationPrimaryKey", System.currentTimeMillis());
 		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		Calendar cal = Calendar.getInstance();
-
 		PendingIntent contentIntent = PendingIntent.getActivity(this.ASobj, 0,
 				notificationIntent,PendingIntent.FLAG_CANCEL_CURRENT);
-
-
 		// Set the info for the views that show in the notification panel.
 		notification.setLatestEventInfo(this.ASobj, "Please complete the survey", text 
 				+ " " +  dateFormat.format(cal.getTime()), contentIntent);
-
 		mNotificationManager.notify(HELLO_ID, notification);
 	}
 }

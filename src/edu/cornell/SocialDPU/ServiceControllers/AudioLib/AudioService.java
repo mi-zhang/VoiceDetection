@@ -79,7 +79,7 @@ public class AudioService extends Service {
 		appState = (SocialDPUApplication) getApplicationContext(); //application class
 		dpuStates = appState.dpuStates;
 				
-		dpuStates.audioService = this;//add a reference of this AudioService to the application
+		dpuStates.audioService = this; //add a reference of this AudioService to the application
 		dpuStates.audio_no_of_records = 0;
 		CONTEXT = this;
 
@@ -116,39 +116,33 @@ public class AudioService extends Service {
 				"Audio Service Started. ",
 				Toast.LENGTH_SHORT).show();
 
-		// Initiate an AudioManger
-		//AudioManager(SocialDPUApplication apppState,AudioService obj, boolean uncompressed, int audioSource, int sampleRate, int channelConfig, int audioFormat)
-		
-		//ar = new AudioManager(appState, this, true, android.media.MediaRecorder.AudioSource.MIC, 8000, android.media.AudioFormat.CHANNEL_CONFIGURATION_MONO,
-		//		android.media.AudioFormat.ENCODING_PCM_16BIT);
+		// NOTICE!!! 
+		// Initiate an AudioManger (parameter setting)
 		ar = new AudioManager(appState, this, true, android.media.MediaRecorder.AudioSource.MIC, 8000, android.media.AudioFormat.CHANNEL_CONFIGURATION_MONO,
 				android.media.AudioFormat.ENCODING_PCM_16BIT);
 
-		// start audio sensing as a thread
+		// Start audio sensing as a separate thread
 		try {
 			t = new Thread() {
-				public void run(){
-					ar.setOutputFile("/sdcard/audio3.txt");					
+				public void run() {
+					ar.setOutputFile("/sdcard/audio3.txt");	
+					// initialize the parameters 				
 					ar.prepare();
+					// start recording the raw audio data
 					ar.start();
 					Log.i("MiCheck", "ar.start(); ...");
 				}
 			};
 			t.start();
-			Toast.makeText(this, "Recording started", Toast.LENGTH_SHORT).show();
-			
+			Toast.makeText(this, "Recording started", Toast.LENGTH_SHORT).show();			
 		}
-		catch(Exception ex) {
-			
+		catch(Exception ex) {			
 			ar = null;
 			Toast.makeText(this, "Cannot create audio file \n" + ex.toString() , Toast.LENGTH_SHORT).show();
 		}		
-
 		Activity_on = true;
 		Foreground_on = true;
-
-		contentView = new RemoteViews(getPackageName(), R.layout.notification_layout);
-		
+		contentView = new RemoteViews(getPackageName(), R.layout.notification_layout);		
 	}
 
 
@@ -168,27 +162,20 @@ public class AudioService extends Service {
 	//This function start the foreground process
 	public int onStartCommand(Intent intent, int flags, int startId) {
 
-
-		if(intent == null)
-		{
+		if(intent == null) {
 			stopSelf(); 
 			return START_NOT_STICKY;
 		}
-
-		//
 		handleCommand(intent);
-
 		// We want this service to continue running until it is explicitly
 		// stopped, so return sticky.
 		return START_STICKY;
 	}
 
 	
-	//
 	void handleCommand(Intent intent) {
 		
-		if (ACTION_FOREGROUND.equals(intent.getAction())) {
-			
+		if (ACTION_FOREGROUND.equals(intent.getAction())) {			
 			notification = new Notification(R.drawable.logo, "Voice Detection", System.currentTimeMillis());
 			contentView.setTextViewText(R.id.audio_text, "Audio on:" + " (" + dpuStates.audio_no_of_records + ")");
 			contentView.setTextColor(R.id.audio_text, Color.argb(128, 0, 115, 0));
@@ -197,7 +184,6 @@ public class AudioService extends Service {
 					new Intent(), 0);
 			notification.contentIntent = contentIntent;
 			startForegroundCompat(R.string.CUSTOM_VIEW,notification);
-
 		} else if (ACTION_BACKGROUND.equals(intent.getAction())) {
 			stopForegroundCompat(R.string.foreground_service_started_aud);
 		}
@@ -226,7 +212,6 @@ public class AudioService extends Service {
 			}
 			return;
 		}
-
 		// Fall back on the old API.
 		setForeground(true);
 		mNM.notify(id, notification);
@@ -254,7 +239,6 @@ public class AudioService extends Service {
 			}
 			return;
 		}
-
 		// Fall back on the old API. Note to cancel BEFORE changing the
 		// foreground state, since we could be killed at that point.
 		mNM.cancel(id);
@@ -270,22 +254,17 @@ public class AudioService extends Service {
 		
 		// Make sure our notification is gone.
 		stopForegroundCompat(R.string.CUSTOM_VIEW);
-
-		try{
-			if(ar == null)
-			{
+		try {
+			if(ar == null) {
 				Toast.makeText(this, "No audio file selected", Toast.LENGTH_SHORT).show();
 				return;
 			}
-
 			//ar.stop();
 			ar.release();
-
-			Log.i("MiCheck", "AudioService onDestroy() ...");
+			// Log.i("MiCheck", "AudioService onDestroy() ...");
 			Toast.makeText(this, "REcording stopped", Toast.LENGTH_SHORT).show();
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			Toast.makeText(this, "Failed to stop recording \n" + ex.toString() , Toast.LENGTH_SHORT).show();
 		}
 		ar = null;
@@ -313,10 +292,8 @@ public class AudioService extends Service {
 		//contentView.setTextColor(R.id.location_text, Color.argb(128, 115, 0, 0));
 
 		notification.contentView = contentView;
-		PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
-				new Intent(), 0);
+		PendingIntent contentIntent = PendingIntent.getActivity(this, 0, new Intent(), 0);
 		notification.contentIntent = contentIntent;
-
 		mNM.notify(R.string.CUSTOM_VIEW,notification);
 
 	}
