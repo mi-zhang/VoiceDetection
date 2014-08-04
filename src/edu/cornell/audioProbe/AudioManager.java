@@ -392,6 +392,20 @@ public class AudioManager {
 				//////////////////////////////////////////////////////////////
 				
 				// Finally send the data to the database!!!
+				// voicingFeatures: 6 features
+				// 	voicingFeatures[0] = numAcorrPeaks; 
+				// 	voicingFeatures[1] = maxAcorrPeakVal;
+				// 	voicingFeatures[2] = maxAcorrPeakLag;
+				// 	voicingFeatures[3] = spectral_entropy;
+				// 	voicingFeatures[4] = relSpecEntr;
+				// 	voicingFeatures[5] = energy;
+				// inferanceResults: array with 20 values
+				// observationProbability: 2 values
+				//	observationProbability[0]= unvoice probability
+				//	observationLikihood[1] = voice probability
+				// numberOfPeaks: 1 value
+				// autoCorrelationPeaks: array
+				// autoCorrelationPeakLags: array
 				AudioObject =  dpuStates.mMlToolkitObjectPool.borrowObject().setValues(tempTimestamp, 31, 
 						MyDataTypeConverter.toByta(voicingFeatures, inferanceResults, observationProbability,
 								numberOfPeaks, autoCorrelationPeaks, autoCorrelationPeakLags), audioFromQueueData.sync_id);
