@@ -77,3 +77,6 @@ double prior[2] = {0.5,0.5};
 double denom_gauss_unvoiced = 0.6846; // 1/(((2*pi)^(3/2))*(det(speech_cov(:,:,1))^0.5))
 double denom_gauss_voiced = 1.0844; // 1/(((2*pi)^(3/2))*(det(speech_cov(:,:,2))^0.5))
 */
+
+
+

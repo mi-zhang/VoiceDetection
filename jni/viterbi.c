@@ -102,13 +102,13 @@ void viterbiDestroy()
 }
 
 
-int getViterbiInference(double *x,double *observationLikelihood, jbyte* viterbitPath){
+int getViterbiInference(double *x, double *observationLikelihood, jbyte* viterbitPath) {
 
 
 	//emissionVoiced = computeMvnPdf(x,mean_voiced, inv_cov_voiced, denom_gauss_voiced);
 	//emissionUnvoiced = computeMvnPdf(x,mean_unvoiced, inv_cov_unvoiced, denom_gauss_unvoiced);
-	emissionProbabilities[1] = computeMvnPdf(x,mean_voiced, inv_cov_voiced, denom_gauss_voiced);
-	emissionProbabilities[0] = computeMvnPdf(x,mean_unvoiced, inv_cov_unvoiced, denom_gauss_unvoiced);
+	emissionProbabilities[1] = computeMvnPdf(x, mean_voiced, inv_cov_voiced, denom_gauss_voiced);
+	emissionProbabilities[0] = computeMvnPdf(x, mean_unvoiced, inv_cov_unvoiced, denom_gauss_unvoiced);
 
 	//compute d[j,k]
 	for(j=0;j<2;j++){ //only two classes, y_t
@@ -179,3 +179,5 @@ int getViterbiInference(double *x,double *observationLikelihood, jbyte* viterbit
 
 
 }
+
+

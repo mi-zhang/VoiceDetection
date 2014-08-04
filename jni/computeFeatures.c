@@ -100,10 +100,10 @@ void Java_edu_cornell_audioProbe_AudioManager_features(JNIEnv* env, jobject java
 	jshort* autoCorPeakLg =  (*env)->GetShortArrayElements(env, autoCorrelationPeakLags, 0);
 
 	//zero mean data
-	normalize_data(buff,normalizedData);
+	normalize_data(buff, normalizedData);
 
 	//apply hamming window smoothing
-	computeHamming(normalizedData,dataHamming);
+	computeHamming(normalizedData, dataHamming);
 
 	//computeFwdFFT
 	kiss_fftr(cfgFwd, dataHamming, fftx);
@@ -123,8 +123,7 @@ void Java_edu_cornell_audioProbe_AudioManager_features(JNIEnv* env, jobject java
 	//compute auto-correlation peaks
 	computeAutoCorrelationPeaks2(powerSpec, powerSpecCpx, NOISE_LEVEL, FFT_LENGTH, autoCorPeakVal, autoCorPeakLg);
 
-
-	//write on the feature vector
+	// write on the feature vector
 	fVector[0] = numAcorrPeaks; //autocorrelation values
 	fVector[1] = maxAcorrPeakVal;
 	fVector[2] = maxAcorrPeakLag;
@@ -132,18 +131,15 @@ void Java_edu_cornell_audioProbe_AudioManager_features(JNIEnv* env, jobject java
 	fVector[4] = relSpecEntr;
 	fVector[5] = energy;
 
-
-	//gaussian distribution
-	//test the gaussian distribution with some dummy values first
 	x[0] = maxAcorrPeakVal;
 	x[1] = numAcorrPeaks;
 	x[2] = relSpecEntr;
 
-	inferenceResult = getViterbiInference(x,observationLikihood,inferRes);
+	inferenceResult = getViterbiInference(x, observationLikihood, inferRes);
 
 	//observation likelihood
-	obsProbVector[0] = (float)observationLikihood[0];
-	obsProbVector[1] = (float)observationLikihood[1];
+	obsProbVector[0] = (float)observationLikihood[0]; // unvoice probability
+	obsProbVector[1] = (float)observationLikihood[1]; // voice probability
 
 	//infer results are already assigned during getViterbiInference call
 
@@ -152,9 +148,9 @@ void Java_edu_cornell_audioProbe_AudioManager_features(JNIEnv* env, jobject java
 	numOfPeaks[0] = numAcorrPeaks;
 
 	(*env)->ReleaseShortArrayElements(env, audio, buff, JNI_ABORT);
-	(*env)->ReleaseFloatArrayElements(env,features, fVector, 0);
+	(*env)->ReleaseFloatArrayElements(env, features, fVector, 0);
 	(*env)->ReleaseFloatArrayElements(env, observationProbability, obsProbVector, 0);
-	(*env)->ReleaseByteArrayElements(env,inferenceResults, inferRes, 0);
+	(*env)->ReleaseByteArrayElements(env, inferenceResults, inferRes, 0);
 	(*env)->ReleaseFloatArrayElements(env, autoCorrelationPeaks, autoCorPeakVal, 0);
 	(*env)->ReleaseShortArrayElements(env, autoCorrelationPeakLags, autoCorPeakLg, 0);
 	(*env)->ReleaseIntArrayElements(env, numberOfPeaks, numOfPeaks, 0);

@@ -136,13 +136,10 @@ public class SocialDPUStates {
 	//inferred status of audio
 	public int inferred_audio_Status = 0;
 	
-	private String  database_path;
+	private String database_path;
 
-	
-	
 	public SocialDPUStates(SocialDPUApplication appState, String database_path) {
-		
-		
+				
 		context = appState;
 		
 		//initiate a service controller class

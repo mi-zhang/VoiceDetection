@@ -15,7 +15,6 @@ public class SocialDPUApplication2 extends SocialDPUApplication {
 	
 	// local folder for storing database data
 	public static String database_path = "/sdcard/VoiceDetection/";
-	//MASH: public static String database_path = "/sdcard/MoodRhythm/SocialDPU/";	
 	
 	public SocialDPUApplication2() {
 		
